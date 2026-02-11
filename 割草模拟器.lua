@@ -332,7 +332,6 @@ for i, option in ipairs(area1Options) do
                 button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
             end
         end
-        updateStatus("已选择: " .. option.Name, Color3.fromRGB(200, 200, 255))
     end)
     
     table.insert(Area1OptionButtons, OptionButton)
@@ -512,9 +511,9 @@ AutoCollectToggle.Font = Enum.Font.Gotham
 AutoCollectToggle.TextSize = 10
 AutoCollectToggle.Parent = SettingsFrame
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 5)
-ToggleCorner.Parent = AutoCollectToggle
+local ToggleCorner2 = Instance.new("UICorner")
+ToggleCorner2.CornerRadius = UDim.new(0, 5)
+ToggleCorner2.Parent = AutoCollectToggle
 
 -- 自动收集速度滑动条
 local SpeedLabel = Instance.new("TextLabel")
@@ -877,51 +876,14 @@ ToggleButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- 简化边界检查
-local function keepInBounds(frame)
-    spawn(function()
-        while frame and frame.Parent do
-            wait(1)
-            
-            if frame.Visible then
-                local absPos = frame.AbsolutePosition
-                local absSize = frame.AbsoluteSize
-                local screenSize = workspace.CurrentCamera.ViewportSize
-                
-                local needReposition = false
-                local newX = absPos.X
-                local newY = absPos.Y
-                
-                if absPos.X < 10 then
-                    newX = 10
-                    needReposition = true
-                elseif absPos.X + absSize.X > screenSize.X - 10 then
-                    newX = screenSize.X - absSize.X - 10
-                    needReposition = true
-                end
-                
-                if absPos.Y < 10 then
-                    newY = 10
-                    needReposition = true
-                elseif absPos.Y + absSize.Y > screenSize.Y - 10 then
-                    newY = screenSize.Y - absSize.Y - 10
-                    needReposition = true
-                end
-                
-                if needReposition then
-                    frame.Position = UDim2.new(0, newX, 0, newY)
-                end
-            end
-        end
-    end)
-end
+-- 移除导致抖动的边界检查函数
+-- 原代码中有 keepInBounds 函数会每秒检查并调整位置
+-- 我们完全移除这个函数
 
 -- 初始化
 updateStatus("脚本已加载", Color3.fromRGB(100, 200, 255))
 
--- 启动边界检查
-keepInBounds(ToggleButton)
-keepInBounds(MainFrame)
+-- 注意：移除了 keepInBounds(ToggleButton) 和 keepInBounds(MainFrame) 调用
 
 -- 为移动设备优化
 if isMobile then
