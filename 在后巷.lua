@@ -8,7 +8,7 @@ if not PlayerGui then
     PlayerGui = Player:WaitForChild("PlayerGui")
 end
 
-print("垃圾中心 v1.2 加载中...")
+print("垃圾中心 v1.4 加载中...")
 
 -- 物品列表
 local allItems = {
@@ -54,7 +54,7 @@ MinimizedCorner.Parent = MinimizedButton
 -- 主菜单（展开状态）
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 320, 0, 240) -- 稍微加大一点
+MainFrame.Size = UDim2.new(0, 320, 0, 240)
 MainFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -176,7 +176,7 @@ ContentFrame.Parent = MainFrame
 
 -- 出售按钮
 local SellButton = Instance.new("TextButton")
-SellButton.Size = UDim2.new(1, 0, 0, 80) -- 加大按钮
+SellButton.Size = UDim2.new(1, 0, 0, 80)
 SellButton.Position = UDim2.new(0, 0, 0, 10)
 SellButton.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
 SellButton.BorderColor3 = Color3.fromRGB(100, 200, 100)
@@ -243,12 +243,13 @@ local InfoBorderCorner = Instance.new("UICorner")
 InfoBorderCorner.CornerRadius = UDim.new(0, 10)
 InfoBorderCorner.Parent = InfoBorder
 
--- 公告标题栏（用于拖动）
+-- 公告标题栏（用于拖动） - 修复：确保可以触摸
 local InfoTitle = Instance.new("Frame")
 InfoTitle.Size = UDim2.new(1, 0, 0, 40)
 InfoTitle.Position = UDim2.new(0, 0, 0, 0)
 InfoTitle.BackgroundColor3 = Color3.fromRGB(35, 35, 60)
 InfoTitle.ZIndex = 902
+InfoTitle.Active = true  -- 添加这个！
 InfoTitle.Parent = InfoFrame
 
 local InfoTitleCorner = Instance.new("UICorner")
@@ -302,7 +303,7 @@ InfoContent.Size = UDim2.new(1, -5, 0, 400)
 InfoContent.Position = UDim2.new(0, 5, 0, 5)
 InfoContent.BackgroundTransparency = 1
 InfoContent.Text = [[
-版本: 1.2
+版本: 1.4
 作者: 蛙
 本脚本由DeepSeek修复与检查功能
 
@@ -316,7 +317,7 @@ InfoContent.Text = [[
 操作:
 手机:
 • 点击💰展开菜单
-• 长按💰直接出售
+• 长按💰拖动按钮
 • 点击"i"查看公告
 • 拖动标题栏移动窗口
 
@@ -326,10 +327,10 @@ InfoContent.Text = [[
 • ESC: 折叠菜单
 
 更新日志:
-v1.2 - 修复版本
-• 修复触摸拖动问题
-• 防止视角跟随移动
-• 优化界面响应
+v1.4 - 修复版本
+• 修复公告窗口拖动
+• 修复悬浮窗按钮消失
+• 优化触摸交互
 
 技术支持:
 如有问题请联系作者
@@ -400,7 +401,7 @@ local function sellItems()
     end
 end
 
--- 折叠菜单
+-- 折叠菜单 - 修复：隐藏时显示悬浮窗按钮
 local function collapseMenu()
     MainFrame.Visible = false
     InfoFrame.Visible = false
@@ -413,76 +414,63 @@ local function expandMenu()
     MainFrame.Visible = true
 end
 
--- 显示公告
+-- 显示公告 - 修复：不隐藏悬浮窗按钮
 local function showInfo()
     InfoFrame.Visible = true
     MainFrame.Visible = false
+    MinimizedButton.Visible = false  -- 公告显示时也隐藏悬浮窗按钮
 end
 
--- 隐藏公告
+-- 隐藏公告 - 修复：返回主菜单
 local function hideInfo()
     InfoFrame.Visible = false
     MainFrame.Visible = true
+    MinimizedButton.Visible = false  -- 主菜单显示时隐藏悬浮窗按钮
 end
 
 -- 按钮事件
 CollapseButton.MouseButton1Click:Connect(collapseMenu)
-CloseButton.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+CloseButton.MouseButton1Click:Connect(function() 
+    ScreenGui:Destroy() 
+    print("脚本已关闭")
+end)
 SellButton.MouseButton1Click:Connect(sellItems)
 MinimizedButton.MouseButton1Click:Connect(expandMenu)
 InfoButton.MouseButton1Click:Connect(showInfo)
 InfoCloseButton.MouseButton1Click:Connect(hideInfo)
 
--- 修复：小按钮的拖动功能
-local minimizedDragging = false
-local minimizedDragStart, minimizedStartPos
-local minimizedLongPress = false
-
+-- 修复：小按钮的拖动功能 - 简化版本
 MinimizedButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
-        minimizedDragStart = input.Position
-        minimizedStartPos = MinimizedButton.Position
-        minimizedDragging = false
-        minimizedLongPress = false
-        
-        -- 开始计时，区分点击和长按
+        local startPos = input.Position
         local startTime = tick()
         
-        -- 等待0.2秒判断是否是长按
+        -- 等待判断是点击还是拖动
         wait(0.2)
         
-        -- 如果还在按住，则认为是长按拖动
+        -- 如果还在按住，则开始拖动
         if UserInputService:IsMouseButtonPressed(Enum.UserInputType.Touch) then
-            minimizedLongPress = true
-            minimizedDragging = true
-        end
-    end
-end)
-
-MinimizedButton.InputChanged:Connect(function(input)
-    if minimizedDragging and input.UserInputType == Enum.UserInputType.Touch then
-        local delta = input.Position - minimizedDragStart
-        MinimizedButton.Position = UDim2.new(
-            minimizedStartPos.X.Scale, 
-            minimizedStartPos.X.Offset + delta.X,
-            minimizedStartPos.Y.Scale, 
-            minimizedStartPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
-MinimizedButton.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        if not minimizedLongPress then
-            -- 短按，展开菜单
+            -- 开始拖动
+            while UserInputService:IsMouseButtonPressed(Enum.UserInputType.Touch) do
+                local currentPos = UserInputService:GetMouseLocation()
+                local delta = currentPos - startPos
+                
+                MinimizedButton.Position = UDim2.new(
+                    0, MinimizedButton.Position.X.Offset + delta.X,
+                    0, MinimizedButton.Position.Y.Offset + delta.Y
+                )
+                
+                startPos = currentPos
+                wait()
+            end
+        else
+            -- 点击，展开菜单
             expandMenu()
         end
-        minimizedDragging = false
-        minimizedLongPress = false
     end
 end)
 
--- 移动端拖动（不干扰Roblox视角）
+-- 移动端拖动 - 修复公告窗口拖动
 local mainDragging = false
 local mainDragStart, mainStartPos
 local infoDragging = false
@@ -494,44 +482,38 @@ TitleBar.InputBegan:Connect(function(input)
         mainDragging = true
         mainDragStart = input.Position
         mainStartPos = MainFrame.Position
-        
-        -- 阻止事件传递，防止Roblox视角移动
         input:Capture()
     end
 end)
 
--- 公告窗口拖动
+-- 公告窗口拖动 - 修复：确保InfoTitle可以接收触摸
 InfoTitle.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
         infoDragging = true
         infoDragStart = input.Position
         infoStartPos = InfoFrame.Position
-        
-        -- 阻止事件传递，防止Roblox视角移动
         input:Capture()
+        print("公告窗口开始拖动")
     end
 end)
 
--- 主窗口拖动
+-- 拖动处理
 UserInputService.InputChanged:Connect(function(input)
     if mainDragging and input.UserInputType == Enum.UserInputType.Touch then
         local delta = input.Position - mainDragStart
         MainFrame.Position = UDim2.new(
-            mainStartPos.X.Scale, 
-            mainStartPos.X.Offset + delta.X,
-            mainStartPos.Y.Scale, 
-            mainStartPos.Y.Offset + delta.Y
+            0, mainStartPos.X.Offset + delta.X,
+            0, mainStartPos.Y.Offset + delta.Y
         )
     end
     
     if infoDragging and input.UserInputType == Enum.UserInputType.Touch then
         local delta = input.Position - infoDragStart
         InfoFrame.Position = UDim2.new(
-            infoStartPos.X.Scale, 
-            infoStartPos.X.Offset + delta.X,
-            infoStartPos.Y.Scale, 
-            infoStartPos.Y.Offset + delta.Y
+            0, infoStartPos.X.Offset + delta.X,
+            0, infoStartPos.Y.Offset + delta.Y
         )
+        print("公告窗口拖动中...")
     end
 end)
 
@@ -540,6 +522,7 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
         mainDragging = false
         infoDragging = false
+        print("拖动结束")
     end
 end)
 
@@ -567,5 +550,5 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("在后巷 v1.3 加载完成")
+print("在后巷 v1.4 加载完成")
 print("作者: 蛙 | DeepSeek修复")
