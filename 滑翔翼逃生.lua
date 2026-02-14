@@ -346,7 +346,7 @@ TeleportToggle.MouseButton1Click:Connect(function()
         TeleportToggle.Text = "🔄 自动胜利: 开启"
         TeleportToggle.BackgroundColor3 = colors.success
         startTeleportLoop()
-        StatusLabel.Text = "✅ 循环传送已开启 (500ms)"
+        StatusLabel.Text = "✅ 自动胜利已开启 (20ms)"
     else
         TeleportToggle.Text = "🔄 自动胜利: 关闭"
         TeleportToggle.BackgroundColor3 = colors.warning
