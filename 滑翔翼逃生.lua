@@ -193,7 +193,7 @@ TitleText.Text = "垃圾中心 - +1速度滑翔翼逃生"
 TitleText.TextColor3 = colors.text
 TitleText.Font = Enum.Font.GothamBold
 TitleText.TextSize = 14
-TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.TextXAlignment = Enum.TextXAlignment.Center
 TitleText.Parent = TitleBar
 
 local CloseButton = Instance.new("TextButton")
