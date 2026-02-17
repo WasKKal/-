@@ -12,4 +12,7 @@ elseif PlaceId == 70960300100792 then
 -- +1速度滑翔翼逃生
 elseif PlaceId == 115442728708640 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/滑翔翼逃生.lua"))()
+-- 你更愿意
+elseif PlaceId == 133379826754141 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/你更愿意,但它会发生.lua"))()
 end
