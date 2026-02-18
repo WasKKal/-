@@ -18,3 +18,4 @@ elseif PlaceId == 133379826754141 then
 -- 造船寻宝
 elseif PlaceID == 537413528 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/造船寻宝.lua"))()  
+end
