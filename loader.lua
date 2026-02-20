@@ -15,6 +15,7 @@ if PlaceId == 115442728708640 then
 -- 你更愿意
 if PlaceId == 133379826754141 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/你更愿意,但它会发生.lua"))()
+local PlaceId = game.PlaceId
 -- 造船寻宝
 if PlaceID == 537413528 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/造船寻宝.lua"))()  
