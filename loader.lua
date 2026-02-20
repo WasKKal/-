@@ -17,7 +17,7 @@ elseif PlaceId == 133379826754141 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/你更愿意,但它会发生.lua"))()
 -- 造船寻宝
 elseif PlaceID == 537413528 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/造船寻宝.lua"))()  
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/%E9%80%A0%E8%88%B9%E5%AF%BB%E5%AE%9D.lua"))()  
 -- 刀片旋转
 elseif PlaceID == 79311273910901 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/刀片旋转.lua"))()
