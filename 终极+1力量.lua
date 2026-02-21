@@ -24,11 +24,17 @@ local TELEPORT_POINTS = {
 -- 超大的力量数值（40个9）
 local POWER_AMOUNT = 9999999999999999999999999999999999999999
 
+-- 超大的重生数值（24个9）
+local REBIRTH_AMOUNT = 999999999999999999999999
+
 -- 变量区
 local isAutoPowerEnabled = false
+local isAutoRebirthEnabled = false
 local autoPowerConnection = nil
+local autoRebirthConnection = nil
 local teleporting = false
 local lastPowerTime = 0
+local lastRebirthTime = 0
 
 -- 默认保存位置
 local savedFloatPos = UDim2.new(0.5, -25, 0.5, -25)
@@ -64,9 +70,9 @@ local function teleportTo(position, duration)
     return true
 end
 
--- 获取力量函数（使用超大的POWER_AMOUNT）
+-- 获取力量函数
 local function getPower(amount)
-    amount = amount or POWER_AMOUNT  -- 使用超大的默认值
+    amount = amount or POWER_AMOUNT
     local args = {
         "Upgrade",
         {
@@ -76,7 +82,7 @@ local function getPower(amount)
         }
     }
     
-    print("⚡ 尝试获取力量... 数值长度:", #tostring(amount))  -- 调试输出，显示数值长度
+    print("⚡ 尝试获取力量... 数值长度:", #tostring(amount))
     local success, result = pcall(function()
         return REQUEST_BUY_FUNCTION:InvokeServer(unpack(args))
     end)
@@ -85,6 +91,32 @@ local function getPower(amount)
         print("✅ 力量获取成功")
     else
         print("❌ 力量获取失败:", result)
+    end
+    
+    return success, result
+end
+
+-- 获取重生函数
+local function getRebirth(amount)
+    amount = amount or REBIRTH_AMOUNT
+    local args = {
+        "Rebirth",
+        {
+            Price = 1,
+            Currency = "Size",
+            Amount = amount
+        }
+    }
+    
+    print("🔄 尝试获取重生... 数值长度:", #tostring(amount))
+    local success, result = pcall(function()
+        return REQUEST_BUY_FUNCTION:InvokeServer(unpack(args))
+    end)
+    
+    if success then
+        print("✅ 重生获取成功")
+    else
+        print("❌ 重生获取失败:", result)
     end
     
     return success, result
@@ -208,10 +240,10 @@ local function createGUI()
     screenGui.Name = "UltimateSizeGUI"
     screenGui.Parent = PlayerGui
 
-    -- 主框架
+    -- 主框架（高度增加以容纳新开关）
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 350, 0, 320)
-    frame.Position = UDim2.new(0.5, -175, 0.5, -160)
+    frame.Size = UDim2.new(0, 350, 0, 390)
+    frame.Position = UDim2.new(0.5, -175, 0.5, -195)
     frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
     frame.BackgroundTransparency = 0.2
     frame.BorderSizePixel = 0
@@ -269,12 +301,12 @@ local function createGUI()
     announceLabel.Parent = announceFrame
 
     -- 自动获取力量开关
-    local powerToggle = createToggle(frame, "⚡ 自动获取力量 (20ms)", 115, false, function(state)
+    local powerToggle = createToggle(frame, "⚡ 自动力量 (20ms)", 115, false, function(state)
         isAutoPowerEnabled = state
-        print("自动获取力量状态变更为:", state)
+        print("自动力量状态变更为:", state)
         
         if state then
-            statusLabel.Text = "自动获取力量已开启 (20ms间隔)"
+            statusLabel.Text = "⚡ 自动力量已开启 (20ms)"
             statusLabel.TextColor3 = Color3.new(0.2, 0.6, 0.2)
             
             -- 关闭旧连接
@@ -309,31 +341,93 @@ local function createGUI()
                 autoPowerConnection:Disconnect()
                 autoPowerConnection = nil
             end
-            statusLabel.Text = "自动获取力量已关闭"
+            statusLabel.Text = "⚡ 自动力量已关闭"
+            statusLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+        end
+    end)
+
+    -- 自动获取重生开关
+    local rebirthToggle = createToggle(frame, "🔄 自动重生 (20ms)", 160, false, function(state)
+        isAutoRebirthEnabled = state
+        print("自动重生状态变更为:", state)
+        
+        if state then
+            statusLabel.Text = "🔄 自动重生已开启 (20ms)"
+            statusLabel.TextColor3 = Color3.new(0.2, 0.6, 0.6)
+            
+            -- 关闭旧连接
+            if autoRebirthConnection then
+                autoRebirthConnection:Disconnect()
+                autoRebirthConnection = nil
+            end
+            
+            -- 立即执行一次
+            task.spawn(function()
+                print("🔄 首次自动获取重生")
+                getRebirth()
+            end)
+            
+            -- 20ms间隔自动获取
+            lastRebirthTime = tick()
+            autoRebirthConnection = RunService.Heartbeat:Connect(function()
+                if isAutoRebirthEnabled then
+                    local currentTime = tick()
+                    if currentTime - lastRebirthTime >= 0.02 then
+                        lastRebirthTime = currentTime
+                        task.spawn(function()
+                            getRebirth()
+                        end)
+                    end
+                end
+            end)
+            
+        else
+            -- 关闭自动获取
+            if autoRebirthConnection then
+                autoRebirthConnection:Disconnect()
+                autoRebirthConnection = nil
+            end
+            statusLabel.Text = "🔄 自动重生已关闭"
             statusLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7)
         end
     end)
 
     -- 手动获取力量按钮
     local manualPowerButton = Instance.new("TextButton")
-    manualPowerButton.Size = UDim2.new(0, 300, 0, 45)
-    manualPowerButton.Position = UDim2.new(0, 25, 0, 160)
+    manualPowerButton.Size = UDim2.new(0, 300, 0, 40)
+    manualPowerButton.Position = UDim2.new(0, 25, 0, 210)
     manualPowerButton.BackgroundColor3 = Color3.new(0.2, 0.5, 0.8)
-    manualPowerButton.Text = "⚡ 手动获取力量（最大值）"
+    manualPowerButton.Text = "⚡ 手动力量（40个9）"
     manualPowerButton.TextColor3 = Color3.new(1, 1, 1)
     manualPowerButton.Font = Enum.Font.GothamBold
     manualPowerButton.TextSize = 16
     manualPowerButton.BorderSizePixel = 0
     manualPowerButton.Parent = frame
 
-    local manualCorner = Instance.new("UICorner")
-    manualCorner.CornerRadius = UDim.new(0, 8)
-    manualCorner.Parent = manualPowerButton
+    local manualPowerCorner = Instance.new("UICorner")
+    manualPowerCorner.CornerRadius = UDim.new(0, 8)
+    manualPowerCorner.Parent = manualPowerButton
+
+    -- 手动获取重生按钮
+    local manualRebirthButton = Instance.new("TextButton")
+    manualRebirthButton.Size = UDim2.new(0, 300, 0, 40)
+    manualRebirthButton.Position = UDim2.new(0, 25, 0, 260)
+    manualRebirthButton.BackgroundColor3 = Color3.new(0.6, 0.3, 0.8)
+    manualRebirthButton.Text = "🔄 手动重生（24个9）"
+    manualRebirthButton.TextColor3 = Color3.new(1, 1, 1)
+    manualRebirthButton.Font = Enum.Font.GothamBold
+    manualRebirthButton.TextSize = 16
+    manualRebirthButton.BorderSizePixel = 0
+    manualRebirthButton.Parent = frame
+
+    local manualRebirthCorner = Instance.new("UICorner")
+    manualRebirthCorner.CornerRadius = UDim.new(0, 8)
+    manualRebirthCorner.Parent = manualRebirthButton
 
     -- 一键胜利按钮
     local winButton = Instance.new("TextButton")
-    winButton.Size = UDim2.new(0, 300, 0, 50)
-    winButton.Position = UDim2.new(0, 25, 0, 215)
+    winButton.Size = UDim2.new(0, 300, 0, 40)
+    winButton.Position = UDim2.new(0, 25, 0, 310)
     winButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
     winButton.Text = "🏆 一键胜利"
     winButton.TextColor3 = Color3.new(1, 1, 1)
@@ -349,7 +443,7 @@ local function createGUI()
     -- 状态标签
     local statusLabel = Instance.new("TextLabel")
     statusLabel.Size = UDim2.new(1, -20, 0, 40)
-    statusLabel.Position = UDim2.new(0, 10, 0, 275)
+    statusLabel.Position = UDim2.new(0, 10, 0, 360)
     statusLabel.BackgroundTransparency = 1
     statusLabel.Text = "就绪"
     statusLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7)
@@ -370,6 +464,20 @@ local function createGUI()
             statusLabel.TextColor3 = Color3.new(0, 1, 0)
         else
             statusLabel.Text = "❌ 力量获取失败"
+            statusLabel.TextColor3 = Color3.new(1, 0, 0)
+        end
+    end)
+
+    manualRebirthButton.MouseButton1Click:Connect(function()
+        statusLabel.Text = "🔄 正在获取重生..."
+        statusLabel.TextColor3 = Color3.new(1, 1, 0)
+        
+        local success = getRebirth()
+        if success then
+            statusLabel.Text = "✅ 重生获取成功！"
+            statusLabel.TextColor3 = Color3.new(0, 1, 0)
+        else
+            statusLabel.Text = "❌ 重生获取失败"
             statusLabel.TextColor3 = Color3.new(1, 0, 0)
         end
     end)
@@ -484,7 +592,4 @@ Player.CharacterAdded:Connect(function()
     createGUI()
 end)
 
-print("✅ 垃圾中心 - 终极每秒+1大小 v1.0.0 已加载")
-print("   初始版本 - Made by Was")
-print("   ⚡ 自动获取力量 (20ms间隔) - 数值: 40个9")
-print("   📏 后三个传送点高度+20 | OFF文字左移优化")
+print("✅ 垃圾中心 - 终极每秒+1大小 v1.0.1 已加载")")
