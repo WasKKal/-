@@ -27,7 +27,12 @@ elseif PlaceId == 98291788885415 then
 -- 火球训练
 elseif PlaceId == 129195078205390 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/火球训练.lua"))()
+-- BloxFruits
+elseif PlaceId == 2753915549 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/BloxFruits.lua"))()
+-- 大战51区
+elseif PlaceId == 155382109 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/大战51区.lua"))()
 end
-
 -- 垃圾中心用户你好,如果你想盗取我的脚本,请直接联系我,我会将部分功能与思路发送给您,不要偷取脚本,感谢使用垃圾中心
 -- MyQQcode:1763356884,QQGroupchatcode:1085475284
