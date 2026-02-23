@@ -1,5 +1,5 @@
 -- 垃圾中心 - 滴管增量 v1.0.0
--- 开发者：蛙Was
+-- 这是一个垃圾脚本 不做混淆处理
 
 local player = game:GetService("Players").LocalPlayer
 local uis = game:GetService("UserInputService")
