@@ -33,6 +33,9 @@ elseif PlaceId == 2753915549 then
 -- 大战51区
 elseif PlaceId == 155382109 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/大战51区.lua"))()
+-- 动漫战斗模拟器INF
+elseif PlaceId == 13024763239829 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/动漫战斗模拟器.lua"))()
 end
 -- 垃圾中心用户你好,如果你想盗取我的脚本,请直接联系我,我会将部分功能与思路发送给您,不要偷取脚本,感谢使用垃圾中心
 -- MyQQcode:1763356884,QQGroupchatcode:1085475284
