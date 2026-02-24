@@ -6,7 +6,7 @@ if PlaceId == 11257760806 then
 -- 割草模拟器
 elseif PlaceId == 133086043677134 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/割草模拟器.lua"))()
--- 滴管增量
+-- 滴管增量,未混淆
 elseif PlaceId == 70960300100792 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/滴管增量.lua"))()
 -- +1速度滑翔翼逃生
@@ -36,6 +36,12 @@ elseif PlaceId == 155382109 then
 -- 动漫战斗模拟器INF
 elseif PlaceId == 13024763239829 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/动漫战斗模拟器.lua"))()
-end
--- 垃圾中心用户你好,如果你想盗取我的脚本,请直接联系我,我会将部分功能与思路发送给您,不要偷取脚本,感谢使用垃圾中心
+-- 力量传奇
+elseif PlaceId == 3623096087 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/力量传奇.lua"))()
+-- Trollge多重宇宙
+elseif PlaceId == 1771919591010 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/Trollge多重宇宙.lua"))()
+    end
+-- 垃圾中心用户你好,如果你想盗取脚本,请联系我,我会将部分功能与思路发送给您,感谢使用垃圾中心
 -- MyQQcode:1763356884,QQGroupchatcode:1085475284
