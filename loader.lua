@@ -48,6 +48,9 @@ elseif PlaceId == 6839171747 then
 -- 忍者传奇
 elseif PlaceId == 3956818381 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/忍者传奇.lua"))()
+-- 极速传奇
+elseif PlaceId == 3101667897 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/极速传奇.lua"))()
 end
--- 垃圾中心用户你好,如果你想盗取脚本,请联系我,我会将部分功能与思路发送给您,感谢使用垃圾中心
+-- 垃圾中心用户你好,如果你想参考功能思路,请联系我,我会将部分功能与思路发送给您,感谢使用垃圾中心
 -- MyQQcode:1763356884,QQGroupchatcode:1085475284
