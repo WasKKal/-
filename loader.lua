@@ -42,6 +42,9 @@ elseif PlaceId == 3623096087 then
 -- Trollge多重宇宙
 elseif PlaceId == 1771919591010 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/Trollge多重宇宙.lua"))()
-    end
+-- Doors
+elseif PlaceId== 6839171747 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/Doors.lua"))()
+end
 -- 垃圾中心用户你好,如果你想盗取脚本,请联系我,我会将部分功能与思路发送给您,感谢使用垃圾中心
 -- MyQQcode:1763356884,QQGroupchatcode:1085475284
