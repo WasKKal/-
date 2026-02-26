@@ -40,7 +40,7 @@ elseif PlaceId == 13024763239829 then
 elseif PlaceId == 3623096087 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/力量传奇.lua"))()
 -- Trollge多重宇宙
-elseif PlaceId == 1771919591010 then
+elseif PlaceId == 6243946064 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/Trollge多重宇宙.lua"))()
 -- Doors
 elseif PlaceId == 6839171747 then
