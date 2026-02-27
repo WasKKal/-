@@ -51,6 +51,15 @@ elseif PlaceId == 3956818381 then
 -- 极速传奇
 elseif PlaceId == 3101667897 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/极速传奇.lua"))()
+
+-- ==================== 黑暗欺骗专用Place ID区域 ====================
+-- 黑暗欺骗第一关
+elseif PlaceId == 102181577519757 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/黑暗欺骗.lua"))()
+
+-- 黑暗欺骗第二关
+elseif PlaceId == 125591428878906 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/黑暗欺骗.lua"))()
 end
--- 垃圾中心用户你好,如果你想参考功能思路,请联系我,我会将部分功能与思路发送给您,感谢使用垃圾中心
+-- QW Hub用户你好,如果你想参考功能思路,请联系我,我会将部分功能与思路发送给您,感谢使用QWscript
 -- MyQQcode:1763356884,QQGroupchatcode:1085475284
