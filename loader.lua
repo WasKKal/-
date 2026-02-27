@@ -21,9 +21,9 @@ elseif PlaceId == 537413528 then
 -- 刀片旋转
 elseif PlaceId == 79311273910901 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/刀片旋转.lua"))()
--- 终极+1力量
+-- 终极+1大小
 elseif PlaceId == 98291788885415 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/终极+1力量.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/终极+1大小.lua"))()
 -- 火球训练
 elseif PlaceId == 129195078205390 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/火球训练.lua"))()
