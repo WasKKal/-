@@ -1,11 +1,11 @@
 --[[
-    SimpleUI - 轻量级直角风格 UI 库
-    用于 Roblox 脚本，支持主题切换和配置保存。
-    使用方法：
-        local UI = loadstring(game:HttpGet("你的托管地址"))()
-        local win = UI:CreateWindow({ Title = "My Window" })
-        local tab = win:Tab("General")
-        tab:Button({ Text = "Click Me", Callback = function() print("Clicked") end })
+    WasUI - 轻量级直角风格 UI 库
+    特性：
+    - 窗口背景支持 URL 图片或纯色
+    - 按钮/开关长按生成浮动快捷键按钮（与主 UI 分离）
+    - 主题切换（亮色/暗色）
+    - 控件：按钮、开关、滑块、输入框、下拉菜单、颜色选择器
+    - 配置管理器（保存用户设置）
 ]]
 
 local Players = game:GetService("Players")
@@ -28,14 +28,59 @@ local function SafeCallback(func, ...)
     if type(func) == "function" then
         local ok, err = pcall(func, ...)
         if not ok then
-            warn("[SimpleUI] Callback error: " .. tostring(err))
+            warn("[WasUI] Callback error: " .. tostring(err))
         end
     end
 end
 
+-- 长按检测器
+local LongPressDetector = {}
+LongPressDetector.__index = LongPressDetector
+
+function LongPressDetector.new(instance, duration, onLongPress)
+    local self = setmetatable({}, LongPressDetector)
+    self.instance = instance
+    self.duration = duration or 0.5
+    self.onLongPress = onLongPress
+    self.pressing = false
+    self.timer = nil
+
+    local function startTimer()
+        self.timer = task.delay(self.duration, function()
+            if self.pressing then
+                self.onLongPress()
+                self:stop()
+            end
+        end)
+    end
+
+    instance.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            self.pressing = true
+            startTimer()
+        end
+    end)
+
+    instance.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            self:stop()
+        end
+    end)
+
+    function self:stop()
+        self.pressing = false
+        if self.timer then
+            task.cancel(self.timer)
+            self.timer = nil
+        end
+    end
+
+    return self
+end
+
 -- ==================== 配置管理器 ====================
 local ConfigManager = {}
-ConfigManager.Folder = "SimpleUI_Config"
+ConfigManager.Folder = "WasUI_Config"
 ConfigManager.Path = ConfigManager.Folder .. "/"
 ConfigManager.Configs = {}
 
@@ -70,7 +115,7 @@ function ConfigManager.NewConfig(name, autoLoad)
             if ok then
                 self.Data = data
             else
-                warn("[SimpleUI] Failed to load config: " .. tostring(data))
+                warn("[WasUI] Failed to load config: " .. tostring(data))
             end
         end
     end
@@ -169,17 +214,18 @@ function Window:Create(data)
     self.Position = data.Position or UDim2.new(0.5, 0, 0.5, 0)
     self.Draggable = data.Draggable ~= false
     self.Closable = data.Closable ~= false
-    self.Folder = data.Folder or "SimpleUI"
+    self.Folder = data.Folder or "WasUI"
     self.ConfigManager = ConfigManager
     self.Theme = Theme
     self.Tabs = {}
     self.CurrentTab = nil
-    self.Elements = {}  -- 存储所有控件对象，用于配置管理
+    self.Elements = {}
     self.Visible = true
+    self.ShortcutButtons = {}   -- 存储创建的快捷键按钮
 
     -- 创建 ScreenGui
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "SimpleUI"
+    screenGui.Name = "WasUI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     self.Gui = screenGui
@@ -193,6 +239,23 @@ function Window:Create(data)
     self.Main.BorderColor3 = Theme.GetColor("Border")
     self.Main.ClipsDescendants = true
     self.Main.Parent = screenGui
+
+    -- 背景图片/颜色处理
+    local backgroundImg = nil
+    if data.Background then
+        if type(data.Background) == "string" and data.Background:match("^https?://") then
+            backgroundImg = Instance.new("ImageLabel")
+            backgroundImg.Size = UDim2.new(1, 0, 1, 0)
+            backgroundImg.BackgroundTransparency = 1
+            backgroundImg.Image = data.Background
+            backgroundImg.ScaleType = Enum.ScaleType.Crop
+            backgroundImg.ZIndex = 0
+            backgroundImg.Parent = self.Main
+            backgroundImg:WaitForChild("ImageLoaded", 5)
+        elseif type(data.Background) == "Color3" then
+            self.Main.BackgroundColor3 = data.Background
+        end
+    end
 
     -- 标题栏
     self.TitleBar = Instance.new("Frame")
@@ -250,7 +313,7 @@ function Window:Create(data)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.Parent = self.TabContainer
 
-    -- 滚动区域（用于内容滚动）
+    -- 滚动区域
     self.ScrollFrame = Instance.new("ScrollingFrame")
     self.ScrollFrame.Size = UDim2.new(1, 0, 1, 0)
     self.ScrollFrame.BackgroundTransparency = 1
@@ -292,6 +355,58 @@ function Window:Create(data)
         end)
     end
 
+    -- 创建浮动快捷键按钮的容器（独立于主窗口）
+    self.ShortcutContainer = Instance.new("Frame")
+    self.ShortcutContainer.Size = UDim2.new(0, 200, 0, 0)
+    self.ShortcutContainer.Position = UDim2.new(1, -210, 0, 10)
+    self.ShortcutContainer.BackgroundTransparency = 1
+    self.ShortcutContainer.ZIndex = 10
+    self.ShortcutContainer.Parent = screenGui
+
+    local shortcutList = Instance.new("UIListLayout")
+    shortcutList.Padding = UDim.new(0, 5)
+    shortcutList.SortOrder = Enum.SortOrder.LayoutOrder
+    shortcutList.Parent = self.ShortcutContainer
+
+    function self:AddShortcutButton(name, callback)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0, 180, 0, 30)
+        btn.BackgroundColor3 = Theme.GetColor("Primary")
+        btn.Text = "⚡ " .. name
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.SourceSans
+        btn.TextSize = 12
+        btn.BorderSizePixel = 0
+        btn.Parent = self.ShortcutContainer
+        btn.MouseButton1Click:Connect(callback)
+
+        -- 动画
+        btn.MouseEnter:Connect(function()
+            Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
+        end)
+        btn.MouseLeave:Connect(function()
+            Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
+        end)
+
+        -- 可选：添加关闭自身的小按钮
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 20, 1, 0)
+        closeBtn.Position = UDim2.new(1, -20, 0, 0)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeBtn.Text = "✕"
+        closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        closeBtn.Font = Enum.Font.SourceSansBold
+        closeBtn.TextSize = 12
+        closeBtn.BorderSizePixel = 0
+        closeBtn.Parent = btn
+        closeBtn.MouseButton1Click:Connect(function()
+            btn:Destroy()
+        end)
+
+        table.insert(self.ShortcutButtons, btn)
+        return btn
+    end
+
     -- 响应主题变化
     function self:UpdateTheme()
         self.Main.BackgroundColor3 = Theme.GetColor("Background")
@@ -307,6 +422,9 @@ function Window:Create(data)
         end
         for _, elem in ipairs(self.Elements) do
             if elem.UpdateTheme then elem:UpdateTheme() end
+        end
+        for _, btn in ipairs(self.ShortcutButtons) do
+            btn.BackgroundColor3 = Theme.GetColor("Primary")
         end
     end
 
@@ -331,7 +449,7 @@ function Window:Create(data)
         self.Gui:Destroy()
     end
 
-    function self:Tab(name, icon)
+    function self:Tab(name)
         local tab = {}
         tab.Name = name
         tab.Window = self
@@ -342,7 +460,7 @@ function Window:Create(data)
         tab.Frame.Visible = false
         tab.Frame.Parent = self.ScrollFrame
 
-        -- 标签按钮
+        -- 标签按钮（确保是 TextButton 实例）
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0, 100, 1, 0)
         btn.BackgroundColor3 = Theme.GetColor("Surface")
@@ -358,7 +476,6 @@ function Window:Create(data)
 
         tab.Button = btn
 
-        -- 内容列表
         local list = Instance.new("UIListLayout")
         list.Padding = UDim.new(0, 10)
         list.SortOrder = Enum.SortOrder.LayoutOrder
@@ -378,7 +495,7 @@ function Window:Create(data)
             end
         end
 
-        -- 控件创建函数
+        -- 按钮控件（支持长按生成快捷键）
         function tab:Button(opts)
             local btnObj = {}
             local btn = Instance.new("TextButton")
@@ -391,8 +508,10 @@ function Window:Create(data)
             btn.TextSize = 14
             btn.BorderSizePixel = 0
             btn.Parent = tab.Frame
+
+            local callback = opts.Callback or function() end
             btn.MouseButton1Click:Connect(function()
-                SafeCallback(opts.Callback)
+                SafeCallback(callback)
             end)
 
             btn.MouseEnter:Connect(function()
@@ -400,6 +519,12 @@ function Window:Create(data)
             end)
             btn.MouseLeave:Connect(function()
                 Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
+            end)
+
+            -- 长按生成快捷键按钮
+            LongPressDetector.new(btn, 0.5, function()
+                local shortcutName = "按钮: " .. (opts.Text or "Button")
+                self:AddShortcutButton(shortcutName, callback)
             end)
 
             function btnObj:SetText(text)
@@ -412,6 +537,7 @@ function Window:Create(data)
             return btnObj
         end
 
+        -- 开关控件（支持长按生成快捷键）
         function tab:Toggle(opts)
             local toggle = {}
             local container = Instance.new("Frame")
@@ -443,14 +569,25 @@ function Window:Create(data)
             btn.Parent = container
 
             local value = opts.Value or false
+            local callback = opts.Callback or function() end
+
             function toggle:Set(v)
                 value = v
                 btn.Text = value and "ON" or "OFF"
                 btn.BackgroundColor3 = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
-                SafeCallback(opts.Callback, value)
+                SafeCallback(callback, value)
             end
+
             btn.MouseButton1Click:Connect(function()
                 toggle:Set(not value)
+            end)
+
+            -- 长按生成快捷键按钮（开关的快捷键会切换状态）
+            LongPressDetector.new(btn, 0.5, function()
+                local shortcutName = "开关: " .. (opts.Text or "Toggle")
+                self:AddShortcutButton(shortcutName, function()
+                    toggle:Set(not value)
+                end)
             end)
 
             function toggle:UpdateTheme()
@@ -463,6 +600,7 @@ function Window:Create(data)
             return toggle
         end
 
+        -- 滑块控件（可扩展长按生成快捷键，这里简单实现，显示当前值）
         function tab:Slider(opts)
             local slider = {}
             local container = Instance.new("Frame")
@@ -519,6 +657,7 @@ function Window:Create(data)
             local step = opts.Step or 1
             local value = opts.Default or min
             local dragging = false
+            local callback = opts.Callback or function() end
 
             local function updateDisplay(val)
                 local percent = (val - min) / (max - min)
@@ -532,7 +671,7 @@ function Window:Create(data)
                 val = math.floor(val / step + 0.5) * step
                 value = val
                 updateDisplay(value)
-                SafeCallback(opts.Callback, value)
+                SafeCallback(callback, value)
             end
 
             track.InputBegan:Connect(function(input)
@@ -579,6 +718,7 @@ function Window:Create(data)
             return slider
         end
 
+        -- 输入框控件（简单实现，可扩展）
         function tab:Input(opts)
             local input = {}
             local container = Instance.new("Frame")
@@ -611,8 +751,9 @@ function Window:Create(data)
             box.BorderColor3 = Theme.GetColor("Border")
             box.Parent = container
 
+            local callback = opts.Callback or function() end
             box.FocusLost:Connect(function()
-                SafeCallback(opts.Callback, box.Text)
+                SafeCallback(callback, box.Text)
             end)
 
             function input:Set(text)
@@ -628,6 +769,7 @@ function Window:Create(data)
             return input
         end
 
+        -- 下拉菜单（简化版）
         function tab:Dropdown(opts)
             local dropdown = {}
             local container = Instance.new("Frame")
@@ -675,6 +817,7 @@ function Window:Create(data)
 
             local options = opts.Values or {}
             local selected = opts.Default or options[1]
+            local callback = opts.Callback or function() end
 
             function dropdown:UpdateList()
                 for _, child in ipairs(dropdownFrame:GetChildren()) do
@@ -694,7 +837,7 @@ function Window:Create(data)
                         selected = opt
                         btn.Text = opt
                         dropdownFrame.Visible = false
-                        SafeCallback(opts.Callback, opt)
+                        SafeCallback(callback, opt)
                     end)
                 end
                 dropdownFrame.Size = UDim2.new(1, 0, 0, #options * 30)
@@ -709,7 +852,7 @@ function Window:Create(data)
                 selected = value
                 btn.Text = value
                 dropdownFrame.Visible = false
-                SafeCallback(opts.Callback, value)
+                SafeCallback(callback, value)
             end
             function dropdown:UpdateTheme()
                 label.TextColor3 = Theme.GetColor("Text")
@@ -729,6 +872,7 @@ function Window:Create(data)
             return dropdown
         end
 
+        -- 颜色选择器（简化版）
         function tab:Colorpicker(opts)
             local picker = {}
             local container = Instance.new("Frame")
@@ -757,15 +901,17 @@ function Window:Create(data)
             colorBtn.Parent = container
 
             local color = opts.Default or Color3.new(1, 1, 1)
+            local callback = opts.Callback or function() end
 
             function picker:SetColor(c)
                 color = c
                 colorBtn.BackgroundColor3 = c
-                SafeCallback(opts.Callback, c)
+                SafeCallback(callback, c)
             end
 
+            -- 简易颜色选择器对话框（略）
             colorBtn.MouseButton1Click:Connect(function()
-                -- 简易颜色选择器对话框
+                -- 这里可打开完整颜色选择器，为简洁起见，仅演示设置颜色
                 local dialog = Instance.new("Frame")
                 dialog.Size = UDim2.new(0, 200, 0, 150)
                 dialog.Position = UDim2.new(0.5, -100, 0.5, -75)
@@ -799,7 +945,7 @@ function Window:Create(data)
                     lbl.TextSize = 12
                     lbl.Parent = cont
 
-                    local slider = {}
+                    local sliderObj = {}
                     local track = Instance.new("Frame")
                     track.Size = UDim2.new(1, -50, 0, 4)
                     track.Position = UDim2.new(0, 25, 0.5, -2)
@@ -822,13 +968,13 @@ function Window:Create(data)
                     handle.Parent = track
 
                     local val = default
-                    function slider:Set(v)
+                    function sliderObj:Set(v)
                         val = v
                         local percent = v / 255
                         fill.Size = UDim2.new(percent, 0, 1, 0)
                         handle.Position = UDim2.new(percent, -4, 0.5, -4)
                     end
-                    function slider:GetValue()
+                    function sliderObj:GetValue()
                         return val
                     end
                     local dragging = false
@@ -838,7 +984,7 @@ function Window:Create(data)
                             local pos = input.Position.X - track.AbsolutePosition.X
                             local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
                             local newVal = math.floor(percent * 255 + 0.5)
-                            slider:Set(newVal)
+                            sliderObj:Set(newVal)
                             updateColor()
                         end
                     end)
@@ -852,7 +998,7 @@ function Window:Create(data)
                             local pos = input.Position.X - track.AbsolutePosition.X
                             local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
                             local newVal = math.floor(percent * 255 + 0.5)
-                            slider:Set(newVal)
+                            sliderObj:Set(newVal)
                             updateColor()
                         end
                     end)
@@ -861,8 +1007,8 @@ function Window:Create(data)
                             dragging = false
                         end
                     end)
-                    slider:Set(default)
-                    return slider
+                    sliderObj:Set(default)
+                    return sliderObj
                 end
 
                 rSlider = addSlider("R", color.R * 255)
@@ -882,11 +1028,6 @@ function Window:Create(data)
                 closeBtn.MouseButton1Click:Connect(function()
                     dialog:Destroy()
                 end)
-
-                function picker:UpdateTheme()
-                    label.TextColor3 = Theme.GetColor("Text")
-                    colorBtn.BorderColor3 = Theme.GetColor("Border")
-                end
             end)
 
             function picker:UpdateTheme()
@@ -913,7 +1054,7 @@ function Window:Create(data)
             space.Parent = tab.Frame
         end
 
-        -- 插入控件后调整滚动画布
+        -- 更新滚动画布
         local function updateCanvas()
             self.ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, self.UIList.AbsoluteContentSize.Y + 10)
         end
@@ -941,25 +1082,25 @@ function Window:Create(data)
 end
 
 -- ==================== 库入口 ====================
-local SimpleUI = {}
-SimpleUI.Window = Window
-SimpleUI.ConfigManager = ConfigManager
-SimpleUI.Theme = Theme
+local WasUI = {}
+WasUI.Window = Window
+WasUI.ConfigManager = ConfigManager
+WasUI.Theme = Theme
 
-function SimpleUI:CreateWindow(data)
+function WasUI:CreateWindow(data)
     return self.Window:Create(data)
 end
 
-function SimpleUI:SetTheme(name)
+function WasUI:SetTheme(name)
     return self.Theme.SetTheme(name)
 end
 
-function SimpleUI:GetTheme()
+function WasUI:GetTheme()
     return self.Theme.Current
 end
 
-function SimpleUI:InitConfig(folder)
+function WasUI:InitConfig(folder)
     self.ConfigManager.Init(folder)
 end
 
-return SimpleUI
+return WasUI
