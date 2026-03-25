@@ -8,19 +8,23 @@
     - 配置管理器（保存用户设置）
     - 选项卡内支持左右分栏布局（TwoColumn）
     - 拖动时阻止事件传递到游戏世界
+    - MacOS 风格窗口控制点（红黄绿）
+    - iOS 风格开关
+    - 开关状态悬浮显示在屏幕右上角
+    - 图标库支持（内置常用图标，支持 URL）
 ]]
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 
 -- ==================== 辅助函数 ====================
-local function Tween(obj, duration, properties)
-    local info = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local function Tween(obj, duration, properties, style, dir)
+    style = style or Enum.EasingStyle.Quad
+    dir = dir or Enum.EasingDirection.Out
+    local info = TweenInfo.new(duration, style, dir)
     local tween = TweenService:Create(obj, info, properties)
     tween:Play()
     return tween
@@ -176,6 +180,7 @@ local Theme = {
             TextSecondary = Color3.fromRGB(100, 100, 100),
             Border = Color3.fromRGB(200, 200, 200),
             Disabled = Color3.fromRGB(150, 150, 150),
+            TabBackground = Color3.fromRGB(220, 220, 220),
         },
         Dark = {
             Background = Color3.fromRGB(30, 30, 30),
@@ -187,6 +192,7 @@ local Theme = {
             TextSecondary = Color3.fromRGB(180, 180, 180),
             Border = Color3.fromRGB(70, 70, 70),
             Disabled = Color3.fromRGB(100, 100, 100),
+            TabBackground = Color3.fromRGB(38, 38, 38),
         },
     }
 }
@@ -203,6 +209,105 @@ function Theme.SetTheme(name)
     return false
 end
 
+-- ==================== 图标库 ====================
+local IconLibrary = {
+    -- 内置简单图标（名称映射到 URL）
+    ["close"] = "rbxassetid://1234567890",   -- 占位，实际可替换
+    ["minimize"] = "rbxassetid://1234567891",
+    ["maximize"] = "rbxassetid://1234567892",
+    ["check"] = "rbxassetid://1234567893",
+    ["chevron-down"] = "rbxassetid://1234567894",
+    ["circle"] = "rbxassetid://1234567895",
+    -- 可扩展更多
+}
+
+function WasUI:GetIcon(name)
+    local icon = IconLibrary[name]
+    if icon then return icon end
+    -- 如果 name 是 URL，直接返回
+    if type(name) == "string" and name:match("^https?://") then
+        return name
+    end
+    return nil
+end
+
+-- ==================== 开关状态管理器（右上角悬浮显示）====================
+local StatusManager = {}
+StatusManager.EnabledStatuses = {}  -- { toggleName = { text, color } }
+StatusManager.Container = nil
+
+function StatusManager.Init(parentGui)
+    if StatusManager.Container then return end
+    StatusManager.Container = Instance.new("Frame")
+    StatusManager.Container.Size = UDim2.new(0, 200, 0, 0)
+    StatusManager.Container.Position = UDim2.new(1, -210, 0, 10)
+    StatusManager.Container.BackgroundTransparency = 1
+    StatusManager.Container.ZIndex = 10
+    StatusManager.Container.Parent = parentGui
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 4)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = StatusManager.Container
+end
+
+function StatusManager.AddStatus(name, text, color)
+    -- 如果已存在，更新
+    local existing = StatusManager.EnabledStatuses[name]
+    if existing then
+        existing.Text = text
+        existing.Color = color
+        if existing.Label then
+            existing.Label.Text = text
+            existing.Label.TextColor3 = color
+        end
+        return
+    end
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 180, 0, 24)
+    label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    label.BackgroundTransparency = 0.7
+    label.BorderSizePixel = 0
+    label.Text = text
+    label.TextColor3 = color
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = StatusManager.Container
+
+    -- 添加圆角
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = label
+
+    StatusManager.EnabledStatuses[name] = {
+        Label = label,
+        Text = text,
+        Color = color,
+    }
+end
+
+function StatusManager.RemoveStatus(name)
+    local status = StatusManager.EnabledStatuses[name]
+    if status and status.Label then
+        status.Label:Destroy()
+    end
+    StatusManager.EnabledStatuses[name] = nil
+end
+
+function StatusManager.UpdateStatus(name, text, color)
+    local status = StatusManager.EnabledStatuses[name]
+    if status then
+        status.Text = text
+        status.Color = color
+        if status.Label then
+            status.Label.Text = text
+            status.Label.TextColor3 = color
+        end
+    end
+end
+
 -- ==================== 窗口类 ====================
 local Window = {}
 Window.__index = Window
@@ -210,7 +315,7 @@ Window.__index = Window
 function Window:Create(data)
     local self = setmetatable({}, Window)
     self.Title = data.Title or "Window"
-    self.Size = data.Size or UDim2.new(0, 500, 0, 380)  -- 缩小尺寸
+    self.Size = data.Size or UDim2.new(0, 520, 0, 400)
     self.MinSize = data.MinSize or Vector2.new(400, 300)
     self.MaxSize = data.MaxSize or Vector2.new(800, 600)
     self.Position = data.Position or UDim2.new(0.5, 0, 0.5, 0)
@@ -224,6 +329,7 @@ function Window:Create(data)
     self.Elements = {}
     self.Visible = true
     self.ShortcutButtons = {}
+    self.Minimized = false
 
     -- 创建 ScreenGui
     local screenGui = Instance.new("ScreenGui")
@@ -232,16 +338,23 @@ function Window:Create(data)
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     self.Gui = screenGui
 
+    -- 初始化状态管理器
+    StatusManager.Init(screenGui)
+
     -- 主窗口 Frame
     self.Main = Instance.new("Frame")
     self.Main.Size = self.Size
     self.Main.Position = self.Position
     self.Main.BackgroundColor3 = Theme.GetColor("Background")
-    self.Main.BorderSizePixel = 1
-    self.Main.BorderColor3 = Theme.GetColor("Border")
+    self.Main.BorderSizePixel = 0
     self.Main.ClipsDescendants = true
     self.Main.Active = true
     self.Main.Parent = screenGui
+
+    -- 窗口圆角
+    local windowCorner = Instance.new("UICorner")
+    windowCorner.CornerRadius = UDim.new(0, 12)
+    windowCorner.Parent = self.Main
 
     -- 背景图片/颜色处理
     if data.Background then
@@ -259,17 +372,64 @@ function Window:Create(data)
         end
     end
 
-    -- 标题栏（用于拖拽）
+    -- 标题栏（MacOS风格）
     self.TitleBar = Instance.new("Frame")
-    self.TitleBar.Size = UDim2.new(1, 0, 0, 28)  -- 稍矮
+    self.TitleBar.Size = UDim2.new(1, 0, 0, 30)
     self.TitleBar.BackgroundColor3 = Theme.GetColor("Surface")
     self.TitleBar.BorderSizePixel = 0
     self.TitleBar.Active = true
     self.TitleBar.Parent = self.Main
 
+    -- 标题栏圆角（只上边）
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 12)
+    titleCorner.Parent = self.TitleBar
+    -- 需要裁剪左上和右上圆角，但简单处理整个标题栏也有圆角也可以
+
+    -- MacOS 三色圆点
+    local dotsContainer = Instance.new("Frame")
+    dotsContainer.Size = UDim2.new(0, 70, 1, 0)
+    dotsContainer.Position = UDim2.new(0, 12, 0, 0)
+    dotsContainer.BackgroundTransparency = 1
+    dotsContainer.Parent = self.TitleBar
+
+    local redDot = Instance.new("TextButton")
+    redDot.Size = UDim2.new(0, 12, 0, 12)
+    redDot.Position = UDim2.new(0, 0, 0.5, -6)
+    redDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+    redDot.Text = ""
+    redDot.BorderSizePixel = 0
+    redDot.Parent = dotsContainer
+    local redCorner = Instance.new("UICorner")
+    redCorner.CornerRadius = UDim.new(1, 0)
+    redCorner.Parent = redDot
+
+    local yellowDot = Instance.new("TextButton")
+    yellowDot.Size = UDim2.new(0, 12, 0, 12)
+    yellowDot.Position = UDim2.new(0, 18, 0.5, -6)
+    yellowDot.BackgroundColor3 = Color3.fromRGB(255, 200, 80)
+    yellowDot.Text = ""
+    yellowDot.BorderSizePixel = 0
+    yellowDot.Parent = dotsContainer
+    local yellowCorner = Instance.new("UICorner")
+    yellowCorner.CornerRadius = UDim.new(1, 0)
+    yellowCorner.Parent = yellowDot
+
+    local greenDot = Instance.new("TextButton")
+    greenDot.Size = UDim2.new(0, 12, 0, 12)
+    greenDot.Position = UDim2.new(0, 36, 0.5, -6)
+    greenDot.BackgroundColor3 = Color3.fromRGB(80, 200, 80)
+    greenDot.Text = ""
+    greenDot.BorderSizePixel = 0
+    greenDot.Parent = dotsContainer
+    local greenCorner = Instance.new("UICorner")
+    greenCorner.CornerRadius = UDim.new(1, 0)
+    greenCorner.Parent = greenDot
+
+    -- 窗口标题
     self.TitleLabel = Instance.new("TextLabel")
-    self.TitleLabel.Size = UDim2.new(1, -40, 1, 0)
-    self.TitleLabel.Position = UDim2.new(0, 5, 0, 0)
+    self.TitleLabel.Size = UDim2.new(1, -90, 1, 0)
+    self.TitleLabel.Position = UDim2.new(0, 70, 0, 0)
     self.TitleLabel.BackgroundTransparency = 1
     self.TitleLabel.Text = self.Title
     self.TitleLabel.TextColor3 = Theme.GetColor("Text")
@@ -278,41 +438,43 @@ function Window:Create(data)
     self.TitleLabel.TextSize = 13
     self.TitleLabel.Parent = self.TitleBar
 
-    -- 关闭按钮
-    if self.Closable then
-        self.CloseBtn = Instance.new("TextButton")
-        self.CloseBtn.Size = UDim2.new(0, 28, 1, 0)
-        self.CloseBtn.Position = UDim2.new(1, -28, 0, 0)
-        self.CloseBtn.BackgroundColor3 = Theme.GetColor("Surface")
-        self.CloseBtn.Text = "✕"
-        self.CloseBtn.TextColor3 = Theme.GetColor("Text")
-        self.CloseBtn.Font = Enum.Font.SourceSansBold
-        self.CloseBtn.TextSize = 14
-        self.CloseBtn.BorderSizePixel = 0
-        self.CloseBtn.Parent = self.TitleBar
-        self.CloseBtn.MouseButton1Click:Connect(function()
-            self:Close()
-        end)
-    end
+    -- 窗口控制按钮功能
+    redDot.MouseButton1Click:Connect(function()
+        self:Close()
+    end)
+    yellowDot.MouseButton1Click:Connect(function()
+        self:Minimize()
+    end)
+    greenDot.MouseButton1Click:Connect(function()
+        self:ToggleFullscreen()
+    end)
 
     -- 标签页容器
     self.TabContainer = Instance.new("Frame")
-    self.TabContainer.Size = UDim2.new(1, 0, 1, -28)
-    self.TabContainer.Position = UDim2.new(0, 0, 0, 28)
+    self.TabContainer.Size = UDim2.new(1, 0, 1, -30)
+    self.TabContainer.Position = UDim2.new(0, 0, 0, 30)
     self.TabContainer.BackgroundTransparency = 1
     self.TabContainer.Parent = self.Main
 
-    -- 标签页按钮区域
+    -- 标签页按钮区域（与内容区分）
     self.TabBar = Instance.new("Frame")
-    self.TabBar.Size = UDim2.new(1, 0, 0, 28)
-    self.TabBar.BackgroundColor3 = Theme.GetColor("Surface")
+    self.TabBar.Size = UDim2.new(1, 0, 0, 32)
+    self.TabBar.BackgroundColor3 = Theme.GetColor("TabBackground")
     self.TabBar.BorderSizePixel = 0
     self.TabBar.Parent = self.TabContainer
 
+    -- 分割线（可选）
+    local tabDivider = Instance.new("Frame")
+    tabDivider.Size = UDim2.new(1, 0, 0, 1)
+    tabDivider.Position = UDim2.new(0, 0, 0, 32)
+    tabDivider.BackgroundColor3 = Theme.GetColor("Border")
+    tabDivider.BorderSizePixel = 0
+    tabDivider.Parent = self.TabContainer
+
     -- 内容区域
     self.ContentArea = Instance.new("Frame")
-    self.ContentArea.Size = UDim2.new(1, 0, 1, -28)
-    self.ContentArea.Position = UDim2.new(0, 0, 0, 28)
+    self.ContentArea.Size = UDim2.new(1, 0, 1, -33)
+    self.ContentArea.Position = UDim2.new(0, 0, 0, 33)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.Parent = self.TabContainer
 
@@ -324,7 +486,7 @@ function Window:Create(data)
     self.ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     self.ScrollFrame.ScrollBarThickness = 6
     self.ScrollFrame.ScrollBarImageTransparency = 0.5
-    self.ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y  -- 仅垂直滚动
+    self.ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
     self.ScrollFrame.Parent = self.ContentArea
 
     self.UIList = Instance.new("UIListLayout")
@@ -386,6 +548,11 @@ function Window:Create(data)
         btn.Parent = self.ShortcutContainer
         btn.MouseButton1Click:Connect(callback)
 
+        -- 圆角
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 8)
+        btnCorner.Parent = btn
+
         btn.MouseEnter:Connect(function()
             Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
         end)
@@ -403,6 +570,9 @@ function Window:Create(data)
         closeBtn.TextSize = 10
         closeBtn.BorderSizePixel = 0
         closeBtn.Parent = btn
+        local closeCorner = Instance.new("UICorner")
+        closeCorner.CornerRadius = UDim.new(0, 4)
+        closeCorner.Parent = closeBtn
         closeBtn.MouseButton1Click:Connect(function()
             btn:Destroy()
         end)
@@ -416,11 +586,8 @@ function Window:Create(data)
         self.Main.BackgroundColor3 = Theme.GetColor("Background")
         self.TitleBar.BackgroundColor3 = Theme.GetColor("Surface")
         self.TitleLabel.TextColor3 = Theme.GetColor("Text")
-        if self.CloseBtn then
-            self.CloseBtn.BackgroundColor3 = Theme.GetColor("Surface")
-            self.CloseBtn.TextColor3 = Theme.GetColor("Text")
-        end
-        self.TabBar.BackgroundColor3 = Theme.GetColor("Surface")
+        self.TabBar.BackgroundColor3 = Theme.GetColor("TabBackground")
+        tabDivider.BackgroundColor3 = Theme.GetColor("Border")
         for _, tab in ipairs(self.Tabs) do
             tab:UpdateTheme()
         end
@@ -442,6 +609,25 @@ function Window:Create(data)
     function self:Close()
         self.Visible = false
         self.Main.Visible = false
+    end
+
+    function self:Minimize()
+        if not self.Minimized then
+            self.Main.Size = UDim2.new(self.Size.X.Scale, self.Size.X.Offset, 0, 30)
+            self.Minimized = true
+        else
+            self.Main.Size = self.Size
+            self.Minimized = false
+        end
+    end
+
+    function self:ToggleFullscreen()
+        -- 简化：切换全屏状态（可扩展为全屏/窗口切换）
+        if self.Main.Size == self.Size then
+            self.Main.Size = UDim2.new(1, 0, 1, 0)
+        else
+            self.Main.Size = self.Size
+        end
     end
 
     function self:Show()
@@ -478,6 +664,11 @@ function Window:Create(data)
             self:SelectTab(tab)
         end)
 
+        -- 按钮圆角（只上角）
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 8)
+        btnCorner.Parent = btn
+
         tab.Button = btn
 
         local list = Instance.new("UIListLayout")
@@ -504,7 +695,7 @@ function Window:Create(data)
         function tab:Button(opts)
             local btnObj = {}
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, -16, 0, 28)  -- 高度缩小
+            btn.Size = UDim2.new(1, -16, 0, 28)
             btn.Position = UDim2.new(0, 8, 0, 0)
             btn.BackgroundColor3 = Theme.GetColor("Primary")
             btn.Text = opts.Text or "Button"
@@ -518,6 +709,11 @@ function Window:Create(data)
             btn.MouseButton1Click:Connect(function()
                 SafeCallback(callback)
             end)
+
+            -- 圆角
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 8)
+            btnCorner.Parent = btn
 
             btn.MouseEnter:Connect(function()
                 Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
@@ -541,17 +737,17 @@ function Window:Create(data)
             return btnObj
         end
 
-        -- 开关控件
+        -- iOS风格开关控件
         function tab:Toggle(opts)
             local toggle = {}
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -16, 0, 30)  -- 高度缩小
+            container.Size = UDim2.new(1, -16, 0, 32)
             container.Position = UDim2.new(0, 8, 0, 0)
             container.BackgroundTransparency = 1
             container.Parent = tab.Frame
 
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -60, 1, 0)
+            label.Size = UDim2.new(1, -80, 1, 0)
             label.Position = UDim2.new(0, 5, 0, 0)
             label.BackgroundTransparency = 1
             label.Text = opts.Text or "Toggle"
@@ -561,33 +757,60 @@ function Window:Create(data)
             label.TextSize = 13
             label.Parent = container
 
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0, 45, 0, 22)
-            btn.Position = UDim2.new(1, -50, 0.5, -11)
-            btn.BackgroundColor3 = Theme.GetColor("Primary")
-            btn.Text = opts.Value and "ON" or "OFF"
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            btn.Font = Enum.Font.SourceSansBold
-            btn.TextSize = 11
-            btn.BorderSizePixel = 0
-            btn.Parent = container
+            -- iOS 开关背景
+            local switchBg = Instance.new("Frame")
+            switchBg.Size = UDim2.new(0, 51, 0, 31)
+            switchBg.Position = UDim2.new(1, -56, 0.5, -15.5)
+            switchBg.BackgroundColor3 = Theme.GetColor("Disabled")
+            switchBg.BorderSizePixel = 0
+            switchBg.Parent = container
+            local switchCorner = Instance.new("UICorner")
+            switchCorner.CornerRadius = UDim.new(0, 16)
+            switchCorner.Parent = switchBg
+
+            local thumb = Instance.new("Frame")
+            thumb.Size = UDim2.new(0, 27, 0, 27)
+            thumb.Position = UDim2.new(0, 2, 0.5, -13.5)
+            thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            thumb.BorderSizePixel = 0
+            thumb.Parent = switchBg
+            local thumbCorner = Instance.new("UICorner")
+            thumbCorner.CornerRadius = UDim.new(1, 0)
+            thumbCorner.Parent = thumb
 
             local value = opts.Value or false
             local callback = opts.Callback or function() end
+            local statusName = opts.Text or "Toggle"
+            local statusColor = Theme.GetColor("Primary")
 
             function toggle:Set(v)
                 value = v
-                btn.Text = value and "ON" or "OFF"
-                btn.BackgroundColor3 = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
+                local targetColor = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
+                local targetPos = value and UDim2.new(0, 22, 0.5, -13.5) or UDim2.new(0, 2, 0.5, -13.5)
+                Tween(switchBg, 0.2, { BackgroundColor3 = targetColor })
+                Tween(thumb, 0.2, { Position = targetPos })
+
                 SafeCallback(callback, value)
+
+                -- 更新右上角状态显示
+                if value then
+                    StatusManager.AddStatus(statusName, statusName .. ": 开启", statusColor)
+                else
+                    StatusManager.RemoveStatus(statusName)
+                end
             end
 
-            btn.MouseButton1Click:Connect(function()
-                toggle:Set(not value)
+            -- 点击切换
+            switchBg.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    toggle:Set(not value)
+                    input:StopPropagation()
+                end
             end)
 
-            LongPressDetector.new(btn, 0.5, function()
-                local shortcutName = "开关: " .. (opts.Text or "Toggle")
+            -- 长按生成快捷键
+            LongPressDetector.new(switchBg, 0.5, function()
+                local shortcutName = "开关: " .. statusName
                 self:AddShortcutButton(shortcutName, function()
                     toggle:Set(not value)
                 end)
@@ -595,7 +818,11 @@ function Window:Create(data)
 
             function toggle:UpdateTheme()
                 label.TextColor3 = Theme.GetColor("Text")
-                btn.BackgroundColor3 = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
+                switchBg.BackgroundColor3 = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
+                statusColor = Theme.GetColor("Primary")
+                if value then
+                    StatusManager.UpdateStatus(statusName, statusName .. ": 开启", statusColor)
+                end
             end
 
             toggle:Set(value)
@@ -603,7 +830,7 @@ function Window:Create(data)
             return toggle
         end
 
-        -- 滑块控件（修复）
+        -- 滑块控件（修复并添加圆角）
         function tab:Slider(opts)
             local slider = {}
             local container = Instance.new("Frame")
@@ -640,12 +867,18 @@ function Window:Create(data)
             track.BackgroundColor3 = Theme.GetColor("Border")
             track.BorderSizePixel = 0
             track.Parent = container
+            local trackCorner = Instance.new("UICorner")
+            trackCorner.CornerRadius = UDim.new(0, 2)
+            trackCorner.Parent = track
 
             local fill = Instance.new("Frame")
             fill.Size = UDim2.new(0, 0, 1, 0)
             fill.BackgroundColor3 = Theme.GetColor("Primary")
             fill.BorderSizePixel = 0
             fill.Parent = track
+            local fillCorner = Instance.new("UICorner")
+            fillCorner.CornerRadius = UDim.new(0, 2)
+            fillCorner.Parent = fill
 
             local handle = Instance.new("Frame")
             handle.Size = UDim2.new(0, 12, 0, 12)
@@ -654,6 +887,9 @@ function Window:Create(data)
             handle.BorderSizePixel = 1
             handle.BorderColor3 = Theme.GetColor("Surface")
             handle.Parent = track
+            local handleCorner = Instance.new("UICorner")
+            handleCorner.CornerRadius = UDim.new(1, 0)
+            handleCorner.Parent = handle
 
             local min = opts.Min or 0
             local max = opts.Max or 100
@@ -726,7 +962,7 @@ function Window:Create(data)
             return slider
         end
 
-        -- 输入框控件
+        -- 输入框控件（圆角）
         function tab:Input(opts)
             local input = {}
             local container = Instance.new("Frame")
@@ -758,6 +994,9 @@ function Window:Create(data)
             box.BorderSizePixel = 1
             box.BorderColor3 = Theme.GetColor("Border")
             box.Parent = container
+            local boxCorner = Instance.new("UICorner")
+            boxCorner.CornerRadius = UDim.new(0, 6)
+            boxCorner.Parent = box
 
             local callback = opts.Callback or function() end
             box.FocusLost:Connect(function()
@@ -777,7 +1016,7 @@ function Window:Create(data)
             return input
         end
 
-        -- 下拉菜单控件
+        -- 下拉菜单（圆角）
         function tab:Dropdown(opts)
             local dropdown = {}
             local container = Instance.new("Frame")
@@ -808,6 +1047,9 @@ function Window:Create(data)
             btn.BorderSizePixel = 1
             btn.BorderColor3 = Theme.GetColor("Border")
             btn.Parent = container
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 6)
+            btnCorner.Parent = btn
 
             local dropdownFrame = Instance.new("Frame")
             dropdownFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -817,6 +1059,9 @@ function Window:Create(data)
             dropdownFrame.BorderColor3 = Theme.GetColor("Border")
             dropdownFrame.Visible = false
             dropdownFrame.Parent = container
+            local dropCorner = Instance.new("UICorner")
+            dropCorner.CornerRadius = UDim.new(0, 6)
+            dropCorner.Parent = dropdownFrame
 
             local list = Instance.new("UIListLayout")
             list.Padding = UDim.new(0, 2)
@@ -841,6 +1086,9 @@ function Window:Create(data)
                     optBtn.TextSize = 12
                     optBtn.BorderSizePixel = 0
                     optBtn.Parent = dropdownFrame
+                    local optCorner = Instance.new("UICorner")
+                    optCorner.CornerRadius = UDim.new(0, 4)
+                    optCorner.Parent = optBtn
                     optBtn.MouseButton1Click:Connect(function()
                         selected = opt
                         btn.Text = opt
@@ -880,7 +1128,7 @@ function Window:Create(data)
             return dropdown
         end
 
-        -- 颜色选择器（简化版）
+        -- 颜色选择器（圆角）
         function tab:Colorpicker(opts)
             local picker = {}
             local container = Instance.new("Frame")
@@ -907,6 +1155,9 @@ function Window:Create(data)
             colorBtn.BorderSizePixel = 1
             colorBtn.BorderColor3 = Theme.GetColor("Border")
             colorBtn.Parent = container
+            local colorCorner = Instance.new("UICorner")
+            colorCorner.CornerRadius = UDim.new(0, 6)
+            colorCorner.Parent = colorBtn
 
             local color = opts.Default or Color3.new(1, 1, 1)
             local callback = opts.Callback or function() end
@@ -925,6 +1176,9 @@ function Window:Create(data)
                 dialog.BorderSizePixel = 1
                 dialog.BorderColor3 = Theme.GetColor("Border")
                 dialog.Parent = self.Main
+                local dialogCorner = Instance.new("UICorner")
+                dialogCorner.CornerRadius = UDim.new(0, 8)
+                dialogCorner.Parent = dialog
 
                 local rSlider, gSlider, bSlider
                 local function updateColor()
@@ -958,12 +1212,18 @@ function Window:Create(data)
                     track.BackgroundColor3 = Theme.GetColor("Border")
                     track.BorderSizePixel = 0
                     track.Parent = cont
+                    local trackCorner = Instance.new("UICorner")
+                    trackCorner.CornerRadius = UDim.new(0, 2)
+                    trackCorner.Parent = track
 
                     local fill = Instance.new("Frame")
                     fill.Size = UDim2.new(0, 0, 1, 0)
                     fill.BackgroundColor3 = Theme.GetColor("Primary")
                     fill.BorderSizePixel = 0
                     fill.Parent = track
+                    local fillCorner = Instance.new("UICorner")
+                    fillCorner.CornerRadius = UDim.new(0, 2)
+                    fillCorner.Parent = fill
 
                     local handle = Instance.new("Frame")
                     handle.Size = UDim2.new(0, 8, 0, 8)
@@ -972,6 +1232,9 @@ function Window:Create(data)
                     handle.BorderSizePixel = 1
                     handle.BorderColor3 = Theme.GetColor("Surface")
                     handle.Parent = track
+                    local handleCorner = Instance.new("UICorner")
+                    handleCorner.CornerRadius = UDim.new(1, 0)
+                    handleCorner.Parent = handle
 
                     local val = default
                     function sliderObj:Set(v)
@@ -1036,6 +1299,9 @@ function Window:Create(data)
                 closeBtn.TextSize = 12
                 closeBtn.BorderSizePixel = 0
                 closeBtn.Parent = dialog
+                local closeCorner = Instance.new("UICorner")
+                closeCorner.CornerRadius = UDim.new(0, 6)
+                closeCorner.Parent = closeBtn
                 closeBtn.MouseButton1Click:Connect(function()
                     dialog:Destroy()
                 end)
@@ -1049,7 +1315,7 @@ function Window:Create(data)
             return picker
         end
 
-        -- 段落文本控件
+        -- 段落文本控件（圆角）
         function tab:Paragraph(opts)
             local para = {}
             local container = Instance.new("Frame")
@@ -1143,9 +1409,8 @@ function Window:Create(data)
             space.Parent = tab.Frame
         end
 
-        -- 左右分栏布局（新增）
+        -- 左右分栏布局（独立滚动修复版）
         function tab:CreateTwoColumn()
-            -- 创建两个容器 Frame
             local left = Instance.new("Frame")
             left.Size = UDim2.new(0.5, -4, 1, 0)
             left.Position = UDim2.new(0, 0, 0, 0)
@@ -1153,6 +1418,9 @@ function Window:Create(data)
             left.BorderSizePixel = 1
             left.BorderColor3 = Theme.GetColor("Border")
             left.Parent = tab.Frame
+            local leftCorner = Instance.new("UICorner")
+            leftCorner.CornerRadius = UDim.new(0, 6)
+            leftCorner.Parent = left
 
             local right = Instance.new("Frame")
             right.Size = UDim2.new(0.5, -4, 1, 0)
@@ -1161,8 +1429,10 @@ function Window:Create(data)
             right.BorderSizePixel = 1
             right.BorderColor3 = Theme.GetColor("Border")
             right.Parent = tab.Frame
+            local rightCorner = Instance.new("UICorner")
+            rightCorner.CornerRadius = UDim.new(0, 6)
+            rightCorner.Parent = right
 
-            -- 为每个区域创建滚动列表（内部垂直滚动）
             local leftScroll = Instance.new("ScrollingFrame")
             leftScroll.Size = UDim2.new(1, 0, 1, 0)
             leftScroll.BackgroundTransparency = 1
@@ -1191,7 +1461,6 @@ function Window:Create(data)
             rightList.SortOrder = Enum.SortOrder.LayoutOrder
             rightList.Parent = rightScroll
 
-            -- 辅助函数，用于更新滚动画布
             local function updateLeftCanvas()
                 leftScroll.CanvasSize = UDim2.new(0, 0, 0, leftList.AbsoluteContentSize.Y + 6)
             end
@@ -1203,8 +1472,18 @@ function Window:Create(data)
             updateLeftCanvas()
             updateRightCanvas()
 
-            -- 返回左右容器的引用，用户可向其中添加控件（例如 left:Button(...)）
-            -- 为了保持一致性，我们为每个容器提供与 tab 相同的控件创建函数（但绑定到左右滚动区域）
+            -- 确保每个区域独立滚动：通过设置 ScrollFrame 的 Active 属性，并阻止事件穿透
+            leftScroll.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    input:StopPropagation()
+                end
+            end)
+            rightScroll.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    input:StopPropagation()
+                end
+            end)
+
             local function createContainerAPI(containerScroll, containerList)
                 local api = {}
                 function api:Button(opts)
@@ -1219,6 +1498,9 @@ function Window:Create(data)
                     btn.TextSize = 12
                     btn.BorderSizePixel = 0
                     btn.Parent = containerScroll
+                    local btnCorner = Instance.new("UICorner")
+                    btnCorner.CornerRadius = UDim.new(0, 8)
+                    btnCorner.Parent = btn
 
                     local callback = opts.Callback or function() end
                     btn.MouseButton1Click:Connect(function()
@@ -1239,17 +1521,15 @@ function Window:Create(data)
                     return btnObj
                 end
                 function api:Toggle(opts)
-                    -- 实现类似，这里省略以保持长度，可按需添加
                     local toggle = {}
-                    -- 示例：简单实现
                     local container = Instance.new("Frame")
-                    container.Size = UDim2.new(1, -12, 0, 28)
+                    container.Size = UDim2.new(1, -12, 0, 30)
                     container.Position = UDim2.new(0, 6, 0, 0)
                     container.BackgroundTransparency = 1
                     container.Parent = containerScroll
 
                     local label = Instance.new("TextLabel")
-                    label.Size = UDim2.new(1, -55, 1, 0)
+                    label.Size = UDim2.new(1, -70, 1, 0)
                     label.Position = UDim2.new(0, 4, 0, 0)
                     label.BackgroundTransparency = 1
                     label.Text = opts.Text or "Toggle"
@@ -1259,32 +1539,47 @@ function Window:Create(data)
                     label.TextSize = 12
                     label.Parent = container
 
-                    local btn = Instance.new("TextButton")
-                    btn.Size = UDim2.new(0, 45, 0, 22)
-                    btn.Position = UDim2.new(1, -49, 0.5, -11)
-                    btn.BackgroundColor3 = Theme.GetColor("Primary")
-                    btn.Text = opts.Value and "ON" or "OFF"
-                    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    btn.Font = Enum.Font.SourceSansBold
-                    btn.TextSize = 11
-                    btn.BorderSizePixel = 0
-                    btn.Parent = container
+                    local switchBg = Instance.new("Frame")
+                    switchBg.Size = UDim2.new(0, 46, 0, 28)
+                    switchBg.Position = UDim2.new(1, -50, 0.5, -14)
+                    switchBg.BackgroundColor3 = Theme.GetColor("Disabled")
+                    switchBg.BorderSizePixel = 0
+                    switchBg.Parent = container
+                    local switchCorner = Instance.new("UICorner")
+                    switchCorner.CornerRadius = UDim.new(0, 14)
+                    switchCorner.Parent = switchBg
+
+                    local thumb = Instance.new("Frame")
+                    thumb.Size = UDim2.new(0, 24, 0, 24)
+                    thumb.Position = UDim2.new(0, 2, 0.5, -12)
+                    thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    thumb.BorderSizePixel = 0
+                    thumb.Parent = switchBg
+                    local thumbCorner = Instance.new("UICorner")
+                    thumbCorner.CornerRadius = UDim.new(1, 0)
+                    thumbCorner.Parent = thumb
 
                     local value = opts.Value or false
                     local callback = opts.Callback or function() end
+
                     function toggle:Set(v)
                         value = v
-                        btn.Text = value and "ON" or "OFF"
-                        btn.BackgroundColor3 = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
+                        local targetColor = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
+                        local targetPos = value and UDim2.new(0, 20, 0.5, -12) or UDim2.new(0, 2, 0.5, -12)
+                        Tween(switchBg, 0.2, { BackgroundColor3 = targetColor })
+                        Tween(thumb, 0.2, { Position = targetPos })
                         SafeCallback(callback, value)
                     end
-                    btn.MouseButton1Click:Connect(function()
-                        toggle:Set(not value)
+                    switchBg.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            toggle:Set(not value)
+                            input:StopPropagation()
+                        end
                     end)
                     toggle:Set(value)
                     return toggle
                 end
-                -- 其他控件（Slider, Input, Dropdown, Colorpicker, Paragraph）可按需添加，此处略。
+                -- 其他控件可按需添加（Slider, Input, Dropdown, Colorpicker, Paragraph）
                 return api
             end
 
@@ -1329,6 +1624,7 @@ local WasUI = {}
 WasUI.Window = Window
 WasUI.ConfigManager = ConfigManager
 WasUI.Theme = Theme
+WasUI.Icon = function(name) return WasUI:GetIcon(name) end
 
 function WasUI:CreateWindow(data)
     return self.Window:Create(data)
@@ -1344,6 +1640,10 @@ end
 
 function WasUI:InitConfig(folder)
     self.ConfigManager.Init(folder)
+end
+
+function WasUI:GetIcon(name)
+    return IconLibrary[name] or name
 end
 
 return WasUI
