@@ -1,11 +1,12 @@
 --[[
-    WasUI - 轻量级直角风格 UI 库
+    WasUI - 轻量级直角风格 UI 库（修复版）
     特性：
     - 窗口背景支持 URL 图片或纯色
     - 按钮/开关长按生成浮动快捷键按钮（与主 UI 分离）
     - 主题切换（亮色/暗色）
-    - 控件：按钮、开关、滑块、输入框、下拉菜单、颜色选择器
+    - 控件：按钮、开关、滑块、输入框、下拉菜单、颜色选择器、段落文本
     - 配置管理器（保存用户设置）
+    - 拖动时阻止事件传递到游戏世界
 ]]
 
 local Players = game:GetService("Players")
@@ -221,7 +222,7 @@ function Window:Create(data)
     self.CurrentTab = nil
     self.Elements = {}
     self.Visible = true
-    self.ShortcutButtons = {}   -- 存储创建的快捷键按钮
+    self.ShortcutButtons = {}
 
     -- 创建 ScreenGui
     local screenGui = Instance.new("ScreenGui")
@@ -238,6 +239,7 @@ function Window:Create(data)
     self.Main.BorderSizePixel = 1
     self.Main.BorderColor3 = Theme.GetColor("Border")
     self.Main.ClipsDescendants = true
+    self.Main.Active = true  -- 允许接收输入
     self.Main.Parent = screenGui
 
     -- 背景图片/颜色处理
@@ -257,11 +259,12 @@ function Window:Create(data)
         end
     end
 
-    -- 标题栏
+    -- 标题栏（用于拖拽）
     self.TitleBar = Instance.new("Frame")
     self.TitleBar.Size = UDim2.new(1, 0, 0, 30)
     self.TitleBar.BackgroundColor3 = Theme.GetColor("Surface")
     self.TitleBar.BorderSizePixel = 0
+    self.TitleBar.Active = true
     self.TitleBar.Parent = self.Main
 
     self.TitleLabel = Instance.new("TextLabel")
@@ -328,28 +331,30 @@ function Window:Create(data)
     self.UIList.SortOrder = Enum.SortOrder.LayoutOrder
     self.UIList.Parent = self.ScrollFrame
 
-    -- 拖拽功能
+    -- 拖拽功能（阻止事件传递）
     if self.Draggable then
         local dragging = false
         local dragStart, startPos
         self.TitleBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = true
                 dragStart = input.Position
                 startPos = self.Main.Position
+                input:StopPropagation()  -- 阻止事件传递到游戏世界
             end
         end)
         UserInputService.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 local delta = input.Position - dragStart
                 self.Main.Position = UDim2.new(
                     startPos.X.Scale, startPos.X.Offset + delta.X,
                     startPos.Y.Scale, startPos.Y.Offset + delta.Y
                 )
+                input:StopPropagation()
             end
         end)
         UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = false
             end
         end)
@@ -380,7 +385,6 @@ function Window:Create(data)
         btn.Parent = self.ShortcutContainer
         btn.MouseButton1Click:Connect(callback)
 
-        -- 动画
         btn.MouseEnter:Connect(function()
             Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
         end)
@@ -388,7 +392,6 @@ function Window:Create(data)
             Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
         end)
 
-        -- 可选：添加关闭自身的小按钮
         local closeBtn = Instance.new("TextButton")
         closeBtn.Size = UDim2.new(0, 20, 1, 0)
         closeBtn.Position = UDim2.new(1, -20, 0, 0)
@@ -474,7 +477,7 @@ function Window:Create(data)
             self:SelectTab(tab)
         end)
 
-        tab.Button = btn
+        tab.Button = btn  -- 保存为按钮实例
 
         local list = Instance.new("UIListLayout")
         list.Padding = UDim.new(0, 10)
@@ -495,7 +498,8 @@ function Window:Create(data)
             end
         end
 
-        -- 按钮控件（支持长按生成快捷键）
+        -- ========== 控件定义 ==========
+        -- 按钮控件
         function tab:Button(opts)
             local btnObj = {}
             local btn = Instance.new("TextButton")
@@ -537,7 +541,7 @@ function Window:Create(data)
             return btnObj
         end
 
-        -- 开关控件（支持长按生成快捷键）
+        -- 开关控件
         function tab:Toggle(opts)
             local toggle = {}
             local container = Instance.new("Frame")
@@ -600,7 +604,7 @@ function Window:Create(data)
             return toggle
         end
 
-        -- 滑块控件（可扩展长按生成快捷键，这里简单实现，显示当前值）
+        -- 滑块控件
         function tab:Slider(opts)
             local slider = {}
             local container = Instance.new("Frame")
@@ -681,21 +685,24 @@ function Window:Create(data)
                     local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
                     local newVal = min + (max - min) * percent
                     slider:Set(newVal)
+                    input:StopPropagation()
                 end
             end)
 
             handle.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
+                    input:StopPropagation()
                 end
             end)
 
             UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     local pos = input.Position.X - track.AbsolutePosition.X
                     local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
                     local newVal = min + (max - min) * percent
                     slider:Set(newVal)
+                    input:StopPropagation()
                 end
             end)
 
@@ -718,7 +725,7 @@ function Window:Create(data)
             return slider
         end
 
-        -- 输入框控件（简单实现，可扩展）
+        -- 输入框控件
         function tab:Input(opts)
             local input = {}
             local container = Instance.new("Frame")
@@ -769,7 +776,7 @@ function Window:Create(data)
             return input
         end
 
-        -- 下拉菜单（简化版）
+        -- 下拉菜单控件
         function tab:Dropdown(opts)
             local dropdown = {}
             local container = Instance.new("Frame")
@@ -909,9 +916,8 @@ function Window:Create(data)
                 SafeCallback(callback, c)
             end
 
-            -- 简易颜色选择器对话框（略）
+            -- 简易颜色选择器对话框（略，保持简单）
             colorBtn.MouseButton1Click:Connect(function()
-                -- 这里可打开完整颜色选择器，为简洁起见，仅演示设置颜色
                 local dialog = Instance.new("Frame")
                 dialog.Size = UDim2.new(0, 200, 0, 150)
                 dialog.Position = UDim2.new(0.5, -100, 0.5, -75)
@@ -986,20 +992,23 @@ function Window:Create(data)
                             local newVal = math.floor(percent * 255 + 0.5)
                             sliderObj:Set(newVal)
                             updateColor()
+                            input:StopPropagation()
                         end
                     end)
                     handle.InputBegan:Connect(function(input)
                         if input.UserInputType == Enum.UserInputType.MouseButton1 then
                             dragging = true
+                            input:StopPropagation()
                         end
                     end)
                     UserInputService.InputChanged:Connect(function(input)
-                        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                             local pos = input.Position.X - track.AbsolutePosition.X
                             local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
                             local newVal = math.floor(percent * 255 + 0.5)
                             sliderObj:Set(newVal)
                             updateColor()
+                            input:StopPropagation()
                         end
                     end)
                     UserInputService.InputEnded:Connect(function(input)
@@ -1038,6 +1047,83 @@ function Window:Create(data)
             return picker
         end
 
+        -- 段落文本控件（用于显示文字）
+        function tab:Paragraph(opts)
+            local para = {}
+            local container = Instance.new("Frame")
+            container.Size = UDim2.new(1, -20, 0, 0)
+            container.Position = UDim2.new(0, 10, 0, 0)
+            container.BackgroundTransparency = 1
+            container.AutomaticSize = Enum.AutomaticSize.Y
+            container.Parent = tab.Frame
+
+            local text = Instance.new("TextLabel")
+            text.Size = UDim2.new(1, 0, 0, 0)
+            text.BackgroundTransparency = 1
+            text.Text = opts.Text or ""
+            text.TextColor3 = Theme.GetColor("Text")
+            text.Font = Enum.Font.SourceSans
+            text.TextSize = 14
+            text.TextWrapped = true
+            text.TextXAlignment = Enum.TextXAlignment.Left
+            text.AutomaticSize = Enum.AutomaticSize.Y
+            text.Parent = container
+
+            if opts.Desc then
+                local desc = Instance.new("TextLabel")
+                desc.Size = UDim2.new(1, 0, 0, 0)
+                desc.BackgroundTransparency = 1
+                desc.Text = opts.Desc
+                desc.TextColor3 = Theme.GetColor("TextSecondary")
+                desc.Font = Enum.Font.SourceSans
+                desc.TextSize = 12
+                desc.TextWrapped = true
+                desc.TextXAlignment = Enum.TextXAlignment.Left
+                desc.AutomaticSize = Enum.AutomaticSize.Y
+                desc.Parent = container
+                local list = Instance.new("UIListLayout")
+                list.Padding = UDim.new(0, 5)
+                list.SortOrder = Enum.SortOrder.LayoutOrder
+                list.Parent = container
+            end
+
+            function para:SetText(newText)
+                text.Text = newText
+            end
+            function para:SetDesc(newDesc)
+                -- 简单实现：若没有 desc 则创建，否则更新
+                local desc = container:FindFirstChildOfClass("TextLabel")
+                if not desc and newDesc then
+                    desc = Instance.new("TextLabel")
+                    desc.Size = UDim2.new(1, 0, 0, 0)
+                    desc.BackgroundTransparency = 1
+                    desc.Text = newDesc
+                    desc.TextColor3 = Theme.GetColor("TextSecondary")
+                    desc.Font = Enum.Font.SourceSans
+                    desc.TextSize = 12
+                    desc.TextWrapped = true
+                    desc.TextXAlignment = Enum.TextXAlignment.Left
+                    desc.AutomaticSize = Enum.AutomaticSize.Y
+                    desc.Parent = container
+                    local list = Instance.new("UIListLayout")
+                    list.Padding = UDim.new(0, 5)
+                    list.SortOrder = Enum.SortOrder.LayoutOrder
+                    list.Parent = container
+                elseif desc then
+                    desc.Text = newDesc or ""
+                end
+            end
+            function para:UpdateTheme()
+                text.TextColor3 = Theme.GetColor("Text")
+                local desc = container:FindFirstChildOfClass("TextLabel")
+                if desc then
+                    desc.TextColor3 = Theme.GetColor("TextSecondary")
+                end
+            end
+            tab:AddElement(para)
+            return para
+        end
+
         function tab:Divider()
             local line = Instance.new("Frame")
             line.Size = UDim2.new(1, -20, 0, 1)
@@ -1068,12 +1154,18 @@ function Window:Create(data)
         return tab
     end
 
+    -- 安全的 SelectTab 实现
     function self:SelectTab(tab)
         if self.CurrentTab == tab then return end
         for _, t in ipairs(self.Tabs) do
             t.Frame.Visible = (t == tab)
-            t.Button.BackgroundColor3 = (t == tab) and Theme.GetColor("Primary") or Theme.GetColor("Surface")
-            t.Button.TextColor3 = (t == tab) and Color3.fromRGB(255, 255, 255) or Theme.GetColor("Text")
+            -- 确保 t.Button 是有效的 TextButton 实例
+            if type(t.Button) == "userdata" and t.Button:IsA("TextButton") then
+                t.Button.BackgroundColor3 = (t == tab) and Theme.GetColor("Primary") or Theme.GetColor("Surface")
+                t.Button.TextColor3 = (t == tab) and Color3.fromRGB(255, 255, 255) or Theme.GetColor("Text")
+            else
+                warn("[WasUI] Invalid tab button for tab:", t.Name)
+            end
         end
         self.CurrentTab = tab
     end
