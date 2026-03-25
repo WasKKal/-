@@ -1,17 +1,22 @@
 --[[
-    WasUI - 轻量级直角风格 UI 库（增强版）
-    特性：
-    - 窗口背景支持 URL 图片或纯色
-    - 按钮/开关长按生成浮动快捷键按钮（与主 UI 分离）
-    - 主题切换（亮色/暗色）
-    - 控件：按钮、开关、滑块、输入框、下拉菜单、颜色选择器、段落文本
-    - 配置管理器（保存用户设置）
-    - 选项卡内支持左右分栏布局（TwoColumn）
-    - 拖动时阻止事件传递到游戏世界
-    - MacOS 风格窗口控制点（红黄绿）
-    - iOS 风格开关
-    - 开关状态悬浮显示在屏幕右上角
-    - 图标库支持（内置常用图标，支持 URL）
+    WasUI - 轻量级 UI 库
+    使用示例：
+        local WasUI = loadstring(game:HttpGet("你的URL"))()
+        local win = WasUI:CreateWindow({ Title = "窗口" })
+        local tab = win:Tab("选项卡")
+        tab:Button({ Text = "按钮", Callback = function() end })
+        tab:Toggle({ Text = "开关", Value = false, Callback = function(v) end })
+        tab:Slider({ Text = "滑块", Min = 0, Max = 100, Default = 50, Callback = function(v) end })
+        tab:Input({ Text = "输入", Placeholder = "", Callback = function(t) end })
+        tab:Dropdown({ Text = "下拉", Values = {"A","B"}, Default = "A", Callback = function(s) end })
+        tab:Colorpicker({ Text = "颜色", Default = Color3.new(1,0,0), Callback = function(c) end })
+        tab:Paragraph({ Text = "文本", Desc = "描述" })
+        tab:Divider()
+        tab:Space(10)
+        local cols = tab:CreateTwoColumn()
+        cols.left:Button({ Text = "左按钮", Callback = function() end })
+        cols.right:Button({ Text = "右按钮", Callback = function() end })
+        WasUI:Notify("标题", "内容", 3)  -- 屏幕上方通知
 ]]
 
 local Players = game:GetService("Players")
@@ -20,7 +25,6 @@ local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- ==================== 辅助函数 ====================
 local function Tween(obj, duration, properties, style, dir)
     style = style or Enum.EasingStyle.Quad
     dir = dir or Enum.EasingDirection.Out
@@ -33,16 +37,12 @@ end
 local function SafeCallback(func, ...)
     if type(func) == "function" then
         local ok, err = pcall(func, ...)
-        if not ok then
-            warn("[WasUI] Callback error: " .. tostring(err))
-        end
+        if not ok then warn("[WasUI] Callback error: " .. tostring(err)) end
     end
 end
 
--- 长按检测器
 local LongPressDetector = {}
 LongPressDetector.__index = LongPressDetector
-
 function LongPressDetector.new(instance, duration, onLongPress)
     local self = setmetatable({}, LongPressDetector)
     self.instance = instance
@@ -50,7 +50,6 @@ function LongPressDetector.new(instance, duration, onLongPress)
     self.onLongPress = onLongPress
     self.pressing = false
     self.timer = nil
-
     local function startTimer()
         self.timer = task.delay(self.duration, function()
             if self.pressing then
@@ -59,32 +58,24 @@ function LongPressDetector.new(instance, duration, onLongPress)
             end
         end)
     end
-
     instance.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             self.pressing = true
             startTimer()
         end
     end)
-
     instance.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             self:stop()
         end
     end)
-
     function self:stop()
         self.pressing = false
-        if self.timer then
-            task.cancel(self.timer)
-            self.timer = nil
-        end
+        if self.timer then task.cancel(self.timer) self.timer = nil end
     end
-
     return self
 end
 
--- ==================== 配置管理器 ====================
 local ConfigManager = {}
 ConfigManager.Folder = "WasUI_Config"
 ConfigManager.Path = ConfigManager.Folder .. "/"
@@ -93,9 +84,7 @@ ConfigManager.Configs = {}
 function ConfigManager.Init(folder)
     if folder then ConfigManager.Folder = folder end
     ConfigManager.Path = ConfigManager.Folder .. "/"
-    if isfolder and not isfolder(ConfigManager.Path) then
-        makefolder(ConfigManager.Path)
-    end
+    if isfolder and not isfolder(ConfigManager.Path) then makefolder(ConfigManager.Path) end
 end
 
 function ConfigManager.NewConfig(name, autoLoad)
@@ -118,11 +107,7 @@ function ConfigManager.NewConfig(name, autoLoad)
                 local content = readfile(self.Path)
                 return HttpService:JSONDecode(content)
             end)
-            if ok then
-                self.Data = data
-            else
-                warn("[WasUI] Failed to load config: " .. tostring(data))
-            end
+            if ok then self.Data = data else warn("[WasUI] Failed to load config: " .. tostring(data)) end
         end
     end
     function config:Set(key, value)
@@ -132,17 +117,12 @@ function ConfigManager.NewConfig(name, autoLoad)
     function config:Get(key, default)
         return self.Data[key] ~= nil and self.Data[key] or default
     end
-    if autoLoad then
-        config:Load()
-    end
+    if autoLoad then config:Load() end
     ConfigManager.Configs[name] = config
     return config
 end
 
-function ConfigManager.GetConfig(name)
-    return ConfigManager.Configs[name]
-end
-
+function ConfigManager.GetConfig(name) return ConfigManager.Configs[name] end
 function ConfigManager.DeleteConfig(name)
     local config = ConfigManager.Configs[name]
     if config and isfile and isfile(config.Path) then
@@ -152,21 +132,17 @@ function ConfigManager.DeleteConfig(name)
     end
     return false
 end
-
 function ConfigManager.ListConfigs()
     local list = {}
     if listfiles then
         for _, file in ipairs(listfiles(ConfigManager.Path)) do
             local name = file:match("([^/\\]+)%.json$")
-            if name then
-                table.insert(list, name)
-            end
+            if name then table.insert(list, name) end
         end
     end
     return list
 end
 
--- ==================== 主题系统 ====================
 local Theme = {
     Current = "Light",
     Themes = {
@@ -196,122 +172,69 @@ local Theme = {
         },
     }
 }
+function Theme.GetColor(key) return Theme.Themes[Theme.Current][key] or Theme.Themes.Light[key] end
+function Theme.SetTheme(name) if Theme.Themes[name] then Theme.Current = name return true end return false end
 
-function Theme.GetColor(key)
-    return Theme.Themes[Theme.Current][key] or Theme.Themes.Light[key]
-end
+local IconLibrary = {}
+function WasUI:GetIcon(name) return IconLibrary[name] or name end
 
-function Theme.SetTheme(name)
-    if Theme.Themes[name] then
-        Theme.Current = name
-        return true
-    end
-    return false
-end
-
--- ==================== 图标库 ====================
-local IconLibrary = {
-    -- 内置简单图标（名称映射到 URL）
-    ["close"] = "rbxassetid://1234567890",   -- 占位，实际可替换
-    ["minimize"] = "rbxassetid://1234567891",
-    ["maximize"] = "rbxassetid://1234567892",
-    ["check"] = "rbxassetid://1234567893",
-    ["chevron-down"] = "rbxassetid://1234567894",
-    ["circle"] = "rbxassetid://1234567895",
-    -- 可扩展更多
-}
-
-function WasUI:GetIcon(name)
-    local icon = IconLibrary[name]
-    if icon then return icon end
-    -- 如果 name 是 URL，直接返回
-    if type(name) == "string" and name:match("^https?://") then
-        return name
-    end
-    return nil
-end
-
--- ==================== 开关状态管理器（右上角悬浮显示）====================
 local StatusManager = {}
-StatusManager.EnabledStatuses = {}  -- { toggleName = { text, color } }
+StatusManager.EnabledStatuses = {}
 StatusManager.Container = nil
-
 function StatusManager.Init(parentGui)
     if StatusManager.Container then return end
     StatusManager.Container = Instance.new("Frame")
-    StatusManager.Container.Size = UDim2.new(0, 200, 0, 0)
-    StatusManager.Container.Position = UDim2.new(1, -210, 0, 10)
+    StatusManager.Container.Size = UDim2.new(0, 240, 0, 0)
+    StatusManager.Container.Position = UDim2.new(0.5, -120, 0, 10)
     StatusManager.Container.BackgroundTransparency = 1
     StatusManager.Container.ZIndex = 10
     StatusManager.Container.Parent = parentGui
-
     local layout = Instance.new("UIListLayout")
     layout.Padding = UDim.new(0, 4)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout.Parent = StatusManager.Container
 end
-
 function StatusManager.AddStatus(name, text, color)
-    -- 如果已存在，更新
     local existing = StatusManager.EnabledStatuses[name]
     if existing then
-        existing.Text = text
-        existing.Color = color
         if existing.Label then
             existing.Label.Text = text
             existing.Label.TextColor3 = color
         end
         return
     end
-
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 180, 0, 24)
+    label.Size = UDim2.new(0, 220, 0, 28)
     label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    label.BackgroundTransparency = 0.7
+    label.BackgroundTransparency = 0.6
     label.BorderSizePixel = 0
     label.Text = text
     label.TextColor3 = color
     label.Font = Enum.Font.SourceSansBold
-    label.TextSize = 12
-    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Center
     label.Parent = StatusManager.Container
-
-    -- 添加圆角
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
+    corner.CornerRadius = UDim.new(0, 14)
     corner.Parent = label
-
-    StatusManager.EnabledStatuses[name] = {
-        Label = label,
-        Text = text,
-        Color = color,
-    }
+    StatusManager.EnabledStatuses[name] = { Label = label, Text = text, Color = color }
+    Tween(label, 0.2, { BackgroundTransparency = 0.6 })
 end
-
 function StatusManager.RemoveStatus(name)
     local status = StatusManager.EnabledStatuses[name]
-    if status and status.Label then
-        status.Label:Destroy()
-    end
+    if status and status.Label then status.Label:Destroy() end
     StatusManager.EnabledStatuses[name] = nil
 end
-
 function StatusManager.UpdateStatus(name, text, color)
     local status = StatusManager.EnabledStatuses[name]
-    if status then
-        status.Text = text
-        status.Color = color
-        if status.Label then
-            status.Label.Text = text
-            status.Label.TextColor3 = color
-        end
+    if status and status.Label then
+        status.Label.Text = text
+        status.Label.TextColor3 = color
     end
 end
 
--- ==================== 窗口类 ====================
 local Window = {}
 Window.__index = Window
-
 function Window:Create(data)
     local self = setmetatable({}, Window)
     self.Title = data.Title or "Window"
@@ -330,18 +253,16 @@ function Window:Create(data)
     self.Visible = true
     self.ShortcutButtons = {}
     self.Minimized = false
+    self.OriginalSize = self.Size
+    self.OriginalPosition = self.Position
 
-    -- 创建 ScreenGui
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "WasUI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     self.Gui = screenGui
-
-    -- 初始化状态管理器
     StatusManager.Init(screenGui)
 
-    -- 主窗口 Frame
     self.Main = Instance.new("Frame")
     self.Main.Size = self.Size
     self.Main.Position = self.Position
@@ -350,43 +271,35 @@ function Window:Create(data)
     self.Main.ClipsDescendants = true
     self.Main.Active = true
     self.Main.Parent = screenGui
-
-    -- 窗口圆角
     local windowCorner = Instance.new("UICorner")
     windowCorner.CornerRadius = UDim.new(0, 12)
     windowCorner.Parent = self.Main
 
-    -- 背景图片/颜色处理
     if data.Background then
         if type(data.Background) == "string" and data.Background:match("^https?://") then
-            local backgroundImg = Instance.new("ImageLabel")
-            backgroundImg.Size = UDim2.new(1, 0, 1, 0)
-            backgroundImg.BackgroundTransparency = 1
-            backgroundImg.Image = data.Background
-            backgroundImg.ScaleType = Enum.ScaleType.Crop
-            backgroundImg.ZIndex = 0
-            backgroundImg.Parent = self.Main
-            backgroundImg:WaitForChild("ImageLoaded", 5)
+            local bg = Instance.new("ImageLabel")
+            bg.Size = UDim2.new(1, 0, 1, 0)
+            bg.BackgroundTransparency = 1
+            bg.Image = data.Background
+            bg.ScaleType = Enum.ScaleType.Crop
+            bg.ZIndex = 0
+            bg.Parent = self.Main
+            bg:WaitForChild("ImageLoaded", 5)
         elseif type(data.Background) == "Color3" then
             self.Main.BackgroundColor3 = data.Background
         end
     end
 
-    -- 标题栏（MacOS风格）
     self.TitleBar = Instance.new("Frame")
     self.TitleBar.Size = UDim2.new(1, 0, 0, 30)
     self.TitleBar.BackgroundColor3 = Theme.GetColor("Surface")
     self.TitleBar.BorderSizePixel = 0
     self.TitleBar.Active = true
     self.TitleBar.Parent = self.Main
-
-    -- 标题栏圆角（只上边）
     local titleCorner = Instance.new("UICorner")
     titleCorner.CornerRadius = UDim.new(0, 12)
     titleCorner.Parent = self.TitleBar
-    -- 需要裁剪左上和右上圆角，但简单处理整个标题栏也有圆角也可以
 
-    -- MacOS 三色圆点
     local dotsContainer = Instance.new("Frame")
     dotsContainer.Size = UDim2.new(0, 70, 1, 0)
     dotsContainer.Position = UDim2.new(0, 12, 0, 0)
@@ -426,7 +339,6 @@ function Window:Create(data)
     greenCorner.CornerRadius = UDim.new(1, 0)
     greenCorner.Parent = greenDot
 
-    -- 窗口标题
     self.TitleLabel = Instance.new("TextLabel")
     self.TitleLabel.Size = UDim2.new(1, -90, 1, 0)
     self.TitleLabel.Position = UDim2.new(0, 70, 0, 0)
@@ -438,32 +350,22 @@ function Window:Create(data)
     self.TitleLabel.TextSize = 13
     self.TitleLabel.Parent = self.TitleBar
 
-    -- 窗口控制按钮功能
-    redDot.MouseButton1Click:Connect(function()
-        self:Close()
-    end)
-    yellowDot.MouseButton1Click:Connect(function()
-        self:Minimize()
-    end)
-    greenDot.MouseButton1Click:Connect(function()
-        self:ToggleFullscreen()
-    end)
+    redDot.MouseButton1Click:Connect(function() self:Destroy() end)
+    yellowDot.MouseButton1Click:Connect(function() self:Minimize() end)
+    greenDot.MouseButton1Click:Connect(function() self:ToggleFullscreen() end)
 
-    -- 标签页容器
     self.TabContainer = Instance.new("Frame")
     self.TabContainer.Size = UDim2.new(1, 0, 1, -30)
     self.TabContainer.Position = UDim2.new(0, 0, 0, 30)
     self.TabContainer.BackgroundTransparency = 1
     self.TabContainer.Parent = self.Main
 
-    -- 标签页按钮区域（与内容区分）
     self.TabBar = Instance.new("Frame")
     self.TabBar.Size = UDim2.new(1, 0, 0, 32)
     self.TabBar.BackgroundColor3 = Theme.GetColor("TabBackground")
     self.TabBar.BorderSizePixel = 0
     self.TabBar.Parent = self.TabContainer
 
-    -- 分割线（可选）
     local tabDivider = Instance.new("Frame")
     tabDivider.Size = UDim2.new(1, 0, 0, 1)
     tabDivider.Position = UDim2.new(0, 0, 0, 32)
@@ -471,14 +373,12 @@ function Window:Create(data)
     tabDivider.BorderSizePixel = 0
     tabDivider.Parent = self.TabContainer
 
-    -- 内容区域
     self.ContentArea = Instance.new("Frame")
     self.ContentArea.Size = UDim2.new(1, 0, 1, -33)
     self.ContentArea.Position = UDim2.new(0, 0, 0, 33)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.Parent = self.TabContainer
 
-    -- 滚动区域（仅垂直滚动）
     self.ScrollFrame = Instance.new("ScrollingFrame")
     self.ScrollFrame.Size = UDim2.new(1, 0, 1, 0)
     self.ScrollFrame.BackgroundTransparency = 1
@@ -494,7 +394,6 @@ function Window:Create(data)
     self.UIList.SortOrder = Enum.SortOrder.LayoutOrder
     self.UIList.Parent = self.ScrollFrame
 
-    -- 拖拽功能（阻止事件传递）
     if self.Draggable then
         local dragging = false
         local dragStart, startPos
@@ -509,28 +408,21 @@ function Window:Create(data)
         UserInputService.InputChanged:Connect(function(input)
             if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 local delta = input.Position - dragStart
-                self.Main.Position = UDim2.new(
-                    startPos.X.Scale, startPos.X.Offset + delta.X,
-                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                )
+                self.Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
                 input:StopPropagation()
             end
         end)
         UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
-            end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
         end)
     end
 
-    -- 创建浮动快捷键按钮的容器
     self.ShortcutContainer = Instance.new("Frame")
     self.ShortcutContainer.Size = UDim2.new(0, 180, 0, 0)
     self.ShortcutContainer.Position = UDim2.new(1, -190, 0, 10)
     self.ShortcutContainer.BackgroundTransparency = 1
     self.ShortcutContainer.ZIndex = 10
     self.ShortcutContainer.Parent = screenGui
-
     local shortcutList = Instance.new("UIListLayout")
     shortcutList.Padding = UDim.new(0, 4)
     shortcutList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -547,19 +439,11 @@ function Window:Create(data)
         btn.BorderSizePixel = 0
         btn.Parent = self.ShortcutContainer
         btn.MouseButton1Click:Connect(callback)
-
-        -- 圆角
         local btnCorner = Instance.new("UICorner")
         btnCorner.CornerRadius = UDim.new(0, 8)
         btnCorner.Parent = btn
-
-        btn.MouseEnter:Connect(function()
-            Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
-        end)
-        btn.MouseLeave:Connect(function()
-            Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
-        end)
-
+        btn.MouseEnter:Connect(function() Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") }) end)
+        btn.MouseLeave:Connect(function() Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") }) end)
         local closeBtn = Instance.new("TextButton")
         closeBtn.Size = UDim2.new(0, 18, 1, 0)
         closeBtn.Position = UDim2.new(1, -18, 0, 0)
@@ -573,70 +457,47 @@ function Window:Create(data)
         local closeCorner = Instance.new("UICorner")
         closeCorner.CornerRadius = UDim.new(0, 4)
         closeCorner.Parent = closeBtn
-        closeBtn.MouseButton1Click:Connect(function()
-            btn:Destroy()
-        end)
-
+        closeBtn.MouseButton1Click:Connect(function() btn:Destroy() end)
         table.insert(self.ShortcutButtons, btn)
         return btn
     end
 
-    -- 响应主题变化
     function self:UpdateTheme()
         self.Main.BackgroundColor3 = Theme.GetColor("Background")
         self.TitleBar.BackgroundColor3 = Theme.GetColor("Surface")
         self.TitleLabel.TextColor3 = Theme.GetColor("Text")
         self.TabBar.BackgroundColor3 = Theme.GetColor("TabBackground")
         tabDivider.BackgroundColor3 = Theme.GetColor("Border")
-        for _, tab in ipairs(self.Tabs) do
-            tab:UpdateTheme()
-        end
-        for _, elem in ipairs(self.Elements) do
-            if elem.UpdateTheme then elem:UpdateTheme() end
-        end
-        for _, btn in ipairs(self.ShortcutButtons) do
-            btn.BackgroundColor3 = Theme.GetColor("Primary")
-        end
+        for _, tab in ipairs(self.Tabs) do tab:UpdateTheme() end
+        for _, elem in ipairs(self.Elements) do if elem.UpdateTheme then elem:UpdateTheme() end end
+        for _, btn in ipairs(self.ShortcutButtons) do btn.BackgroundColor3 = Theme.GetColor("Primary") end
     end
 
-    -- 窗口方法
-    function self:SetTheme(name)
-        if Theme.SetTheme(name) then
-            self:UpdateTheme()
-        end
-    end
-
-    function self:Close()
-        self.Visible = false
-        self.Main.Visible = false
-    end
+    function self:SetTheme(name) if Theme.SetTheme(name) then self:UpdateTheme() end end
+    function self:Close() self.Visible = false self.Main.Visible = false end
+    function self:Show() self.Visible = true self.Main.Visible = true end
+    function self:Destroy() self.Gui:Destroy() end
 
     function self:Minimize()
         if not self.Minimized then
-            self.Main.Size = UDim2.new(self.Size.X.Scale, self.Size.X.Offset, 0, 30)
+            self.OriginalSize = self.Main.Size
+            self.OriginalPosition = self.Main.Position
+            local targetPos = UDim2.new(1, -self.TitleBar.AbsoluteSize.X, 1, -self.TitleBar.AbsoluteSize.Y)
+            local targetSize = UDim2.new(0, self.TitleBar.AbsoluteSize.X, 0, self.TitleBar.AbsoluteSize.Y)
+            Tween(self.Main, 0.4, { Size = targetSize, Position = targetPos }, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             self.Minimized = true
         else
-            self.Main.Size = self.Size
+            Tween(self.Main, 0.4, { Size = self.OriginalSize, Position = self.OriginalPosition }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
             self.Minimized = false
         end
     end
 
     function self:ToggleFullscreen()
-        -- 简化：切换全屏状态（可扩展为全屏/窗口切换）
         if self.Main.Size == self.Size then
             self.Main.Size = UDim2.new(1, 0, 1, 0)
         else
             self.Main.Size = self.Size
         end
-    end
-
-    function self:Show()
-        self.Visible = true
-        self.Main.Visible = true
-    end
-
-    function self:Destroy()
-        self.Gui:Destroy()
     end
 
     function self:Tab(name)
@@ -650,7 +511,6 @@ function Window:Create(data)
         tab.Frame.Visible = false
         tab.Frame.Parent = self.ScrollFrame
 
-        -- 标签按钮
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0, 90, 1, 0)
         btn.BackgroundColor3 = Theme.GetColor("Surface")
@@ -660,15 +520,10 @@ function Window:Create(data)
         btn.TextSize = 12
         btn.BorderSizePixel = 0
         btn.Parent = self.TabBar
-        btn.MouseButton1Click:Connect(function()
-            self:SelectTab(tab)
-        end)
-
-        -- 按钮圆角（只上角）
+        btn.MouseButton1Click:Connect(function() self:SelectTab(tab) end)
         local btnCorner = Instance.new("UICorner")
         btnCorner.CornerRadius = UDim.new(0, 8)
         btnCorner.Parent = btn
-
         tab.Button = btn
 
         local list = Instance.new("UIListLayout")
@@ -685,13 +540,9 @@ function Window:Create(data)
         function tab:UpdateTheme()
             btn.BackgroundColor3 = Theme.GetColor("Surface")
             btn.TextColor3 = Theme.GetColor("Text")
-            for _, elem in ipairs(self.Elements) do
-                if elem.UpdateTheme then elem:UpdateTheme() end
-            end
+            for _, elem in ipairs(self.Elements) do if elem.UpdateTheme then elem:UpdateTheme() end end
         end
 
-        -- ========== 控件定义 ==========
-        -- 按钮控件
         function tab:Button(opts)
             local btnObj = {}
             local btn = Instance.new("TextButton")
@@ -704,40 +555,23 @@ function Window:Create(data)
             btn.TextSize = 13
             btn.BorderSizePixel = 0
             btn.Parent = tab.Frame
-
             local callback = opts.Callback or function() end
-            btn.MouseButton1Click:Connect(function()
-                SafeCallback(callback)
-            end)
-
-            -- 圆角
+            btn.MouseButton1Click:Connect(function() SafeCallback(callback) end)
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 8)
             btnCorner.Parent = btn
-
-            btn.MouseEnter:Connect(function()
-                Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
-            end)
-            btn.MouseLeave:Connect(function()
-                Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
-            end)
-
+            btn.MouseEnter:Connect(function() Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") }) end)
+            btn.MouseLeave:Connect(function() Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") }) end)
             LongPressDetector.new(btn, 0.5, function()
                 local shortcutName = "按钮: " .. (opts.Text or "Button")
                 self:AddShortcutButton(shortcutName, callback)
             end)
-
-            function btnObj:SetText(text)
-                btn.Text = text
-            end
-            function btnObj:UpdateTheme()
-                btn.BackgroundColor3 = Theme.GetColor("Primary")
-            end
+            function btnObj:SetText(text) btn.Text = text end
+            function btnObj:UpdateTheme() btn.BackgroundColor3 = Theme.GetColor("Primary") end
             tab:AddElement(btnObj)
             return btnObj
         end
 
-        -- iOS风格开关控件
         function tab:Toggle(opts)
             local toggle = {}
             local container = Instance.new("Frame")
@@ -757,7 +591,6 @@ function Window:Create(data)
             label.TextSize = 13
             label.Parent = container
 
-            -- iOS 开关背景
             local switchBg = Instance.new("Frame")
             switchBg.Size = UDim2.new(0, 51, 0, 31)
             switchBg.Position = UDim2.new(1, -56, 0.5, -15.5)
@@ -789,18 +622,14 @@ function Window:Create(data)
                 local targetPos = value and UDim2.new(0, 22, 0.5, -13.5) or UDim2.new(0, 2, 0.5, -13.5)
                 Tween(switchBg, 0.2, { BackgroundColor3 = targetColor })
                 Tween(thumb, 0.2, { Position = targetPos })
-
                 SafeCallback(callback, value)
-
-                -- 更新右上角状态显示
                 if value then
-                    StatusManager.AddStatus(statusName, statusName .. ": 开启", statusColor)
+                    StatusManager.AddStatus(statusName, "✓ " .. statusName .. " 已开启", statusColor)
                 else
                     StatusManager.RemoveStatus(statusName)
                 end
             end
 
-            -- 点击切换
             switchBg.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     toggle:Set(not value)
@@ -808,21 +637,16 @@ function Window:Create(data)
                 end
             end)
 
-            -- 长按生成快捷键
             LongPressDetector.new(switchBg, 0.5, function()
                 local shortcutName = "开关: " .. statusName
-                self:AddShortcutButton(shortcutName, function()
-                    toggle:Set(not value)
-                end)
+                self:AddShortcutButton(shortcutName, function() toggle:Set(not value) end)
             end)
 
             function toggle:UpdateTheme()
                 label.TextColor3 = Theme.GetColor("Text")
                 switchBg.BackgroundColor3 = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
                 statusColor = Theme.GetColor("Primary")
-                if value then
-                    StatusManager.UpdateStatus(statusName, statusName .. ": 开启", statusColor)
-                end
+                if value then StatusManager.UpdateStatus(statusName, "✓ " .. statusName .. " 已开启", statusColor) end
             end
 
             toggle:Set(value)
@@ -830,7 +654,6 @@ function Window:Create(data)
             return toggle
         end
 
-        -- 滑块控件（修复并添加圆角）
         function tab:Slider(opts)
             local slider = {}
             local container = Instance.new("Frame")
@@ -923,16 +746,13 @@ function Window:Create(data)
                     input:StopPropagation()
                 end
             end)
-
             handle.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
                     input:StopPropagation()
                 end
             end)
-
-            local moveConn
-            moveConn = UserInputService.InputChanged:Connect(function(input)
+            local moveConn = UserInputService.InputChanged:Connect(function(input)
                 if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     local pos = input.Position.X - track.AbsolutePosition.X
                     local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
@@ -941,12 +761,8 @@ function Window:Create(data)
                     input:StopPropagation()
                 end
             end)
-
-            local endConn
-            endConn = UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
-                end
+            local endConn = UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
             end)
 
             slider:Set(value)
@@ -962,7 +778,6 @@ function Window:Create(data)
             return slider
         end
 
-        -- 输入框控件（圆角）
         function tab:Input(opts)
             local input = {}
             local container = Instance.new("Frame")
@@ -999,13 +814,9 @@ function Window:Create(data)
             boxCorner.Parent = box
 
             local callback = opts.Callback or function() end
-            box.FocusLost:Connect(function()
-                SafeCallback(callback, box.Text)
-            end)
+            box.FocusLost:Connect(function() SafeCallback(callback, box.Text) end)
 
-            function input:Set(text)
-                box.Text = text
-            end
+            function input:Set(text) box.Text = text end
             function input:UpdateTheme()
                 label.TextColor3 = Theme.GetColor("Text")
                 box.BackgroundColor3 = Theme.GetColor("Surface")
@@ -1016,7 +827,6 @@ function Window:Create(data)
             return input
         end
 
-        -- 下拉菜单（圆角）
         function tab:Dropdown(opts)
             local dropdown = {}
             local container = Instance.new("Frame")
@@ -1073,9 +883,7 @@ function Window:Create(data)
             local callback = opts.Callback or function() end
 
             function dropdown:UpdateList()
-                for _, child in ipairs(dropdownFrame:GetChildren()) do
-                    if child:IsA("TextButton") then child:Destroy() end
-                end
+                for _, child in ipairs(dropdownFrame:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
                 for i, opt in ipairs(options) do
                     local optBtn = Instance.new("TextButton")
                     optBtn.Size = UDim2.new(1, 0, 0, 26)
@@ -1099,10 +907,7 @@ function Window:Create(data)
                 dropdownFrame.Size = UDim2.new(1, 0, 0, #options * 26)
             end
 
-            btn.MouseButton1Click:Connect(function()
-                dropdownFrame.Visible = not dropdownFrame.Visible
-            end)
-
+            btn.MouseButton1Click:Connect(function() dropdownFrame.Visible = not dropdownFrame.Visible end)
             dropdown:UpdateList()
             function dropdown:Select(value)
                 selected = value
@@ -1128,7 +933,6 @@ function Window:Create(data)
             return dropdown
         end
 
-        -- 颜色选择器（圆角）
         function tab:Colorpicker(opts)
             local picker = {}
             local container = Instance.new("Frame")
@@ -1243,9 +1047,7 @@ function Window:Create(data)
                         fill.Size = UDim2.new(percent, 0, 1, 0)
                         handle.Position = UDim2.new(percent, -4, 0.5, -4)
                     end
-                    function sliderObj:GetValue()
-                        return val
-                    end
+                    function sliderObj:GetValue() return val end
                     local dragging = false
                     track.InputBegan:Connect(function(input)
                         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -1264,8 +1066,7 @@ function Window:Create(data)
                             input:StopPropagation()
                         end
                     end)
-                    local moveConn
-                    moveConn = UserInputService.InputChanged:Connect(function(input)
+                    local moveConn = UserInputService.InputChanged:Connect(function(input)
                         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                             local pos = input.Position.X - track.AbsolutePosition.X
                             local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
@@ -1275,11 +1076,8 @@ function Window:Create(data)
                             input:StopPropagation()
                         end
                     end)
-                    local endConn
-                    endConn = UserInputService.InputEnded:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                            dragging = false
-                        end
+                    local endConn = UserInputService.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
                     end)
                     sliderObj:Set(default)
                     return sliderObj
@@ -1302,9 +1100,7 @@ function Window:Create(data)
                 local closeCorner = Instance.new("UICorner")
                 closeCorner.CornerRadius = UDim.new(0, 6)
                 closeCorner.Parent = closeBtn
-                closeBtn.MouseButton1Click:Connect(function()
-                    dialog:Destroy()
-                end)
+                closeBtn.MouseButton1Click:Connect(function() dialog:Destroy() end)
             end)
 
             function picker:UpdateTheme()
@@ -1315,7 +1111,6 @@ function Window:Create(data)
             return picker
         end
 
-        -- 段落文本控件（圆角）
         function tab:Paragraph(opts)
             local para = {}
             local container = Instance.new("Frame")
@@ -1355,9 +1150,7 @@ function Window:Create(data)
                 list.Parent = container
             end
 
-            function para:SetText(newText)
-                text.Text = newText
-            end
+            function para:SetText(newText) text.Text = newText end
             function para:SetDesc(newDesc)
                 local desc = container:FindFirstChildOfClass("TextLabel")
                 if not desc and newDesc then
@@ -1383,15 +1176,12 @@ function Window:Create(data)
             function para:UpdateTheme()
                 text.TextColor3 = Theme.GetColor("Text")
                 local desc = container:FindFirstChildOfClass("TextLabel")
-                if desc then
-                    desc.TextColor3 = Theme.GetColor("TextSecondary")
-                end
+                if desc then desc.TextColor3 = Theme.GetColor("TextSecondary") end
             end
             tab:AddElement(para)
             return para
         end
 
-        -- 分隔线
         function tab:Divider()
             local line = Instance.new("Frame")
             line.Size = UDim2.new(1, -16, 0, 1)
@@ -1401,7 +1191,6 @@ function Window:Create(data)
             line.Parent = tab.Frame
         end
 
-        -- 间距
         function tab:Space(height)
             local space = Instance.new("Frame")
             space.Size = UDim2.new(1, -16, 0, height or 8)
@@ -1409,7 +1198,6 @@ function Window:Create(data)
             space.Parent = tab.Frame
         end
 
-        -- 左右分栏布局（独立滚动修复版）
         function tab:CreateTwoColumn()
             local left = Instance.new("Frame")
             left.Size = UDim2.new(0.5, -4, 1, 0)
@@ -1441,7 +1229,6 @@ function Window:Create(data)
             leftScroll.ScrollBarThickness = 4
             leftScroll.ScrollingDirection = Enum.ScrollingDirection.Y
             leftScroll.Parent = left
-
             local leftList = Instance.new("UIListLayout")
             leftList.Padding = UDim.new(0, 6)
             leftList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1455,34 +1242,20 @@ function Window:Create(data)
             rightScroll.ScrollBarThickness = 4
             rightScroll.ScrollingDirection = Enum.ScrollingDirection.Y
             rightScroll.Parent = right
-
             local rightList = Instance.new("UIListLayout")
             rightList.Padding = UDim.new(0, 6)
             rightList.SortOrder = Enum.SortOrder.LayoutOrder
             rightList.Parent = rightScroll
 
-            local function updateLeftCanvas()
-                leftScroll.CanvasSize = UDim2.new(0, 0, 0, leftList.AbsoluteContentSize.Y + 6)
-            end
-            local function updateRightCanvas()
-                rightScroll.CanvasSize = UDim2.new(0, 0, 0, rightList.AbsoluteContentSize.Y + 6)
-            end
+            local function updateLeftCanvas() leftScroll.CanvasSize = UDim2.new(0, 0, 0, leftList.AbsoluteContentSize.Y + 6) end
+            local function updateRightCanvas() rightScroll.CanvasSize = UDim2.new(0, 0, 0, rightList.AbsoluteContentSize.Y + 6) end
             leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateLeftCanvas)
             rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateRightCanvas)
             updateLeftCanvas()
             updateRightCanvas()
 
-            -- 确保每个区域独立滚动：通过设置 ScrollFrame 的 Active 属性，并阻止事件穿透
-            leftScroll.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    input:StopPropagation()
-                end
-            end)
-            rightScroll.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    input:StopPropagation()
-                end
-            end)
+            leftScroll.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then input:StopPropagation() end end)
+            rightScroll.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then input:StopPropagation() end end)
 
             local function createContainerAPI(containerScroll, containerList)
                 local api = {}
@@ -1501,23 +1274,12 @@ function Window:Create(data)
                     local btnCorner = Instance.new("UICorner")
                     btnCorner.CornerRadius = UDim.new(0, 8)
                     btnCorner.Parent = btn
-
                     local callback = opts.Callback or function() end
-                    btn.MouseButton1Click:Connect(function()
-                        SafeCallback(callback)
-                    end)
-                    btn.MouseEnter:Connect(function()
-                        Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
-                    end)
-                    btn.MouseLeave:Connect(function()
-                        Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
-                    end)
-                    function btnObj:SetText(text)
-                        btn.Text = text
-                    end
-                    function btnObj:UpdateTheme()
-                        btn.BackgroundColor3 = Theme.GetColor("Primary")
-                    end
+                    btn.MouseButton1Click:Connect(function() SafeCallback(callback) end)
+                    btn.MouseEnter:Connect(function() Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") }) end)
+                    btn.MouseLeave:Connect(function() Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") }) end)
+                    function btnObj:SetText(text) btn.Text = text end
+                    function btnObj:UpdateTheme() btn.BackgroundColor3 = Theme.GetColor("Primary") end
                     return btnObj
                 end
                 function api:Toggle(opts)
@@ -1561,7 +1323,6 @@ function Window:Create(data)
 
                     local value = opts.Value or false
                     local callback = opts.Callback or function() end
-
                     function toggle:Set(v)
                         value = v
                         local targetColor = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
@@ -1579,17 +1340,14 @@ function Window:Create(data)
                     toggle:Set(value)
                     return toggle
                 end
-                -- 其他控件可按需添加（Slider, Input, Dropdown, Colorpicker, Paragraph）
                 return api
             end
 
             local leftAPI = createContainerAPI(leftScroll, leftList)
             local rightAPI = createContainerAPI(rightScroll, rightList)
-
             return { left = leftAPI, right = rightAPI }
         end
 
-        -- 更新滚动画布
         local function updateCanvas()
             self.ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, self.UIList.AbsoluteContentSize.Y + 8)
         end
@@ -1597,13 +1355,10 @@ function Window:Create(data)
         updateCanvas()
 
         table.insert(self.Tabs, tab)
-        if not self.CurrentTab then
-            self:SelectTab(tab)
-        end
+        if not self.CurrentTab then self:SelectTab(tab) end
         return tab
     end
 
-    -- 安全的 SelectTab
     function self:SelectTab(tab)
         if self.CurrentTab == tab then return end
         for _, t in ipairs(self.Tabs) do
@@ -1619,31 +1374,59 @@ function Window:Create(data)
     return self
 end
 
--- ==================== 库入口 ====================
 local WasUI = {}
 WasUI.Window = Window
 WasUI.ConfigManager = ConfigManager
 WasUI.Theme = Theme
-WasUI.Icon = function(name) return WasUI:GetIcon(name) end
+WasUI.Icon = function(name) return name end
 
-function WasUI:CreateWindow(data)
-    return self.Window:Create(data)
-end
+function WasUI:CreateWindow(data) return self.Window:Create(data) end
+function WasUI:SetTheme(name) return self.Theme.SetTheme(name) end
+function WasUI:GetTheme() return self.Theme.Current end
+function WasUI:InitConfig(folder) self.ConfigManager.Init(folder) end
+function WasUI:GetIcon(name) return name end
 
-function WasUI:SetTheme(name)
-    return self.Theme.SetTheme(name)
-end
-
-function WasUI:GetTheme()
-    return self.Theme.Current
-end
-
-function WasUI:InitConfig(folder)
-    self.ConfigManager.Init(folder)
-end
-
-function WasUI:GetIcon(name)
-    return IconLibrary[name] or name
+function WasUI:Notify(title, content, duration)
+    local screenGui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("WasUI")
+    if not screenGui then return end
+    local notif = Instance.new("Frame")
+    notif.Size = UDim2.new(0, 300, 0, 50)
+    notif.Position = UDim2.new(0.5, -150, 0, 10)
+    notif.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    notif.BackgroundTransparency = 0.2
+    notif.BorderSizePixel = 0
+    notif.Parent = screenGui
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = notif
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -20, 0, 20)
+    titleLabel.Position = UDim2.new(0, 10, 0, 5)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 14
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = notif
+    local contentLabel = Instance.new("TextLabel")
+    contentLabel.Size = UDim2.new(1, -20, 0, 25)
+    contentLabel.Position = UDim2.new(0, 10, 0, 25)
+    contentLabel.BackgroundTransparency = 1
+    contentLabel.Text = content
+    contentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    contentLabel.TextSize = 12
+    contentLabel.Font = Enum.Font.SourceSans
+    contentLabel.TextXAlignment = Enum.TextXAlignment.Left
+    contentLabel.TextWrapped = true
+    contentLabel.Parent = notif
+    notif.Position = UDim2.new(0.5, -150, 0, -60)
+    Tween(notif, 0.3, { Position = UDim2.new(0.5, -150, 0, 10) })
+    task.delay(duration or 3, function()
+        Tween(notif, 0.3, { Position = UDim2.new(0.5, -150, 0, -60) }):Completed:Connect(function()
+            notif:Destroy()
+        end)
+    end)
 end
 
 return WasUI
