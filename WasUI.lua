@@ -1,22 +1,7 @@
 --[[
-    WasUI - 轻量级 UI 库
-    使用示例：
-        local WasUI = loadstring(game:HttpGet("你的URL"))()
-        local win = WasUI:CreateWindow({ Title = "窗口" })
-        local tab = win:Tab("选项卡")
-        tab:Button({ Text = "按钮", Callback = function() end })
-        tab:Toggle({ Text = "开关", Value = false, Callback = function(v) end })
-        tab:Slider({ Text = "滑块", Min = 0, Max = 100, Default = 50, Callback = function(v) end })
-        tab:Input({ Text = "输入", Placeholder = "", Callback = function(t) end })
-        tab:Dropdown({ Text = "下拉", Values = {"A","B"}, Default = "A", Callback = function(s) end })
-        tab:Colorpicker({ Text = "颜色", Default = Color3.new(1,0,0), Callback = function(c) end })
-        tab:Paragraph({ Text = "文本", Desc = "描述" })
-        tab:Divider()
-        tab:Space(10)
-        local cols = tab:CreateTwoColumn()
-        cols.left:Button({ Text = "左按钮", Callback = function() end })
-        cols.right:Button({ Text = "右按钮", Callback = function() end })
-        WasUI:Notify("标题", "内容", 3)  -- 屏幕上方通知
+    WasUI - 轻量级 UI 库（内嵌版）
+    包含所有功能：圆角、MacOS 三色点、iOS 开关、左右分栏、全局通知等。
+    无需外部文件，直接运行。
 ]]
 
 local Players = game:GetService("Players")
@@ -175,9 +160,6 @@ local Theme = {
 function Theme.GetColor(key) return Theme.Themes[Theme.Current][key] or Theme.Themes.Light[key] end
 function Theme.SetTheme(name) if Theme.Themes[name] then Theme.Current = name return true end return false end
 
-local IconLibrary = {}
-function WasUI:GetIcon(name) return IconLibrary[name] or name end
-
 local StatusManager = {}
 StatusManager.EnabledStatuses = {}
 StatusManager.Container = nil
@@ -243,7 +225,6 @@ function Window:Create(data)
     self.MaxSize = data.MaxSize or Vector2.new(800, 600)
     self.Position = data.Position or UDim2.new(0.5, 0, 0.5, 0)
     self.Draggable = data.Draggable ~= false
-    self.Closable = data.Closable ~= false
     self.Folder = data.Folder or "WasUI"
     self.ConfigManager = ConfigManager
     self.Theme = Theme
@@ -1378,7 +1359,6 @@ local WasUI = {}
 WasUI.Window = Window
 WasUI.ConfigManager = ConfigManager
 WasUI.Theme = Theme
-WasUI.Icon = function(name) return name end
 
 function WasUI:CreateWindow(data) return self.Window:Create(data) end
 function WasUI:SetTheme(name) return self.Theme.SetTheme(name) end
@@ -1429,4 +1409,71 @@ function WasUI:Notify(title, content, duration)
     end)
 end
 
-return WasUI
+-- ==================== 示例代码 ====================
+WasUI:InitConfig("WasUI_Demo")
+
+local win = WasUI:CreateWindow({
+    Title = "WasUI 控件演示",
+    Size = UDim2.new(0, 580, 0, 520),
+    Background = Color3.fromRGB(35, 35, 45),
+    Draggable = true,
+})
+
+local basicTab = win:Tab("基础控件")
+basicTab:Paragraph({ Text = "按钮", Desc = "点击触发回调，长按生成快捷键" })
+basicTab:Button({ Text = "普通按钮", Callback = function() print("[基础] 按钮点击") end })
+basicTab:Button({ Text = "另一个按钮", Callback = function() print("[基础] 另一个按钮点击") end })
+basicTab:Divider()
+basicTab:Paragraph({ Text = "开关 (iOS风格)", Desc = "开启时屏幕上方显示状态提示" })
+basicTab:Toggle({ Text = "功能开关", Value = false, Callback = function(v) print("[基础] 开关状态:", v) end })
+basicTab:Toggle({ Text = "默认开启", Value = true, Callback = function(v) print("[基础] 默认开关状态:", v) end })
+basicTab:Divider()
+basicTab:Paragraph({ Text = "滑块", Desc = "支持整数和浮点数步长" })
+basicTab:Slider({ Text = "音量", Min = 0, Max = 100, Default = 50, Callback = function(v) print("[基础] 音量:", v) end })
+basicTab:Slider({ Text = "亮度", Min = 0, Max = 1, Default = 0.5, Step = 0.05, Callback = function(v) print("[基础] 亮度:", v) end })
+basicTab:Space(10)
+
+local advancedTab = win:Tab("高级控件")
+advancedTab:Paragraph({ Text = "输入框", Desc = "单行文本，失去焦点触发回调" })
+advancedTab:Input({ Text = "用户名", Value = "Guest", Placeholder = "输入用户名", Callback = function(t) print("[高级] 用户名:", t) end })
+advancedTab:Input({ Text = "密码", Value = "", Placeholder = "密码", Callback = function(t) print("[高级] 密码已输入") end })
+advancedTab:Divider()
+advancedTab:Paragraph({ Text = "下拉菜单", Desc = "单击展开选项列表" })
+advancedTab:Dropdown({ Text = "颜色选择", Values = {"红色","绿色","蓝色"}, Default = "红色", Callback = function(s) print("[高级] 选择颜色:", s) end })
+advancedTab:Dropdown({ Text = "数字选项", Values = {"1","2","3","4","5"}, Default = "3", Callback = function(s) print("[高级] 选择数字:", s) end })
+advancedTab:Divider()
+advancedTab:Paragraph({ Text = "颜色选择器", Desc = "点击按钮打开颜色选择对话框" })
+advancedTab:Colorpicker({ Text = "主题色", Default = Color3.fromRGB(0,120,215), Callback = function(c) print("[高级] 颜色:", c) end })
+advancedTab:Colorpicker({ Text = "背景色", Default = Color3.fromRGB(30,30,30), Callback = function(c) print("[高级] 背景色:", c) end })
+advancedTab:Space(10)
+
+local layoutTab = win:Tab("布局演示")
+layoutTab:Paragraph({ Text = "左右分栏布局", Desc = "两列独立滚动，互不干扰" })
+local cols = layoutTab:CreateTwoColumn()
+cols.left:Button({ Text = "左侧按钮 1", Callback = function() print("[布局] 左侧按钮 1") end })
+cols.left:Toggle({ Text = "左侧开关", Value = false, Callback = function(v) print("[布局] 左侧开关:", v) end })
+cols.left:Slider({ Text = "左侧滑块", Min = 0, Max = 100, Default = 30, Callback = function(v) print("[布局] 左侧滑块:", v) end })
+cols.left:Input({ Text = "左侧输入", Placeholder = "输入内容", Callback = function(t) print("[布局] 左侧输入:", t) end })
+cols.left:Dropdown({ Text = "左侧下拉", Values = {"选项1","选项2"}, Default = "选项1", Callback = function(s) print("[布局] 左侧下拉:", s) end })
+cols.right:Button({ Text = "右侧按钮 1", Callback = function() print("[布局] 右侧按钮 1") end })
+cols.right:Toggle({ Text = "右侧开关", Value = true, Callback = function(v) print("[布局] 右侧开关:", v) end })
+cols.right:Slider({ Text = "右侧滑块", Min = 0, Max = 100, Default = 70, Callback = function(v) print("[布局] 右侧滑块:", v) end })
+cols.right:Input({ Text = "右侧输入", Placeholder = "右侧输入", Callback = function(t) print("[布局] 右侧输入:", t) end })
+cols.right:Dropdown({ Text = "右侧下拉", Values = {"A","B","C"}, Default = "B", Callback = function(s) print("[布局] 右侧下拉:", s) end })
+layoutTab:Space(10)
+
+local miscTab = win:Tab("杂项控件")
+miscTab:Paragraph({ Text = "段落文本控件", Desc = "可以显示带描述的文本内容。" })
+miscTab:Divider()
+miscTab:Paragraph({ Text = "空段落演示", Desc = nil })
+miscTab:Space(10)
+miscTab:Button({ Text = "显示全局通知", Callback = function() WasUI:Notify("演示通知", "这是来自 WasUI 的全局通知", 3) end })
+miscTab:Button({ Text = "切换主题", Callback = function()
+    local current = WasUI:GetTheme()
+    WasUI:SetTheme(current == "Light" and "Dark" or "Light")
+    print("[杂项] 主题已切换为:", WasUI:GetTheme())
+end })
+miscTab:Space(10)
+
+win.Close = function() print("[WasUI] 窗口已关闭") end
+print("WasUI 界面已加载，所有控件可用")
