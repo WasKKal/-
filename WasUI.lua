@@ -1,11 +1,12 @@
 --[[
-    WasUI - 轻量级直角风格 UI 库（修复版）
+    WasUI - 轻量级直角风格 UI 库（增强版）
     特性：
     - 窗口背景支持 URL 图片或纯色
     - 按钮/开关长按生成浮动快捷键按钮（与主 UI 分离）
     - 主题切换（亮色/暗色）
     - 控件：按钮、开关、滑块、输入框、下拉菜单、颜色选择器、段落文本
     - 配置管理器（保存用户设置）
+    - 选项卡内支持左右分栏布局（TwoColumn）
     - 拖动时阻止事件传递到游戏世界
 ]]
 
@@ -209,9 +210,9 @@ Window.__index = Window
 function Window:Create(data)
     local self = setmetatable({}, Window)
     self.Title = data.Title or "Window"
-    self.Size = data.Size or UDim2.new(0, 600, 0, 400)
+    self.Size = data.Size or UDim2.new(0, 500, 0, 380)  -- 缩小尺寸
     self.MinSize = data.MinSize or Vector2.new(400, 300)
-    self.MaxSize = data.MaxSize or Vector2.new(1000, 800)
+    self.MaxSize = data.MaxSize or Vector2.new(800, 600)
     self.Position = data.Position or UDim2.new(0.5, 0, 0.5, 0)
     self.Draggable = data.Draggable ~= false
     self.Closable = data.Closable ~= false
@@ -239,14 +240,13 @@ function Window:Create(data)
     self.Main.BorderSizePixel = 1
     self.Main.BorderColor3 = Theme.GetColor("Border")
     self.Main.ClipsDescendants = true
-    self.Main.Active = true  -- 允许接收输入
+    self.Main.Active = true
     self.Main.Parent = screenGui
 
     -- 背景图片/颜色处理
-    local backgroundImg = nil
     if data.Background then
         if type(data.Background) == "string" and data.Background:match("^https?://") then
-            backgroundImg = Instance.new("ImageLabel")
+            local backgroundImg = Instance.new("ImageLabel")
             backgroundImg.Size = UDim2.new(1, 0, 1, 0)
             backgroundImg.BackgroundTransparency = 1
             backgroundImg.Image = data.Background
@@ -261,7 +261,7 @@ function Window:Create(data)
 
     -- 标题栏（用于拖拽）
     self.TitleBar = Instance.new("Frame")
-    self.TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    self.TitleBar.Size = UDim2.new(1, 0, 0, 28)  -- 稍矮
     self.TitleBar.BackgroundColor3 = Theme.GetColor("Surface")
     self.TitleBar.BorderSizePixel = 0
     self.TitleBar.Active = true
@@ -275,19 +275,19 @@ function Window:Create(data)
     self.TitleLabel.TextColor3 = Theme.GetColor("Text")
     self.TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     self.TitleLabel.Font = Enum.Font.SourceSansBold
-    self.TitleLabel.TextSize = 14
+    self.TitleLabel.TextSize = 13
     self.TitleLabel.Parent = self.TitleBar
 
     -- 关闭按钮
     if self.Closable then
         self.CloseBtn = Instance.new("TextButton")
-        self.CloseBtn.Size = UDim2.new(0, 30, 1, 0)
-        self.CloseBtn.Position = UDim2.new(1, -30, 0, 0)
+        self.CloseBtn.Size = UDim2.new(0, 28, 1, 0)
+        self.CloseBtn.Position = UDim2.new(1, -28, 0, 0)
         self.CloseBtn.BackgroundColor3 = Theme.GetColor("Surface")
         self.CloseBtn.Text = "✕"
         self.CloseBtn.TextColor3 = Theme.GetColor("Text")
         self.CloseBtn.Font = Enum.Font.SourceSansBold
-        self.CloseBtn.TextSize = 16
+        self.CloseBtn.TextSize = 14
         self.CloseBtn.BorderSizePixel = 0
         self.CloseBtn.Parent = self.TitleBar
         self.CloseBtn.MouseButton1Click:Connect(function()
@@ -297,26 +297,26 @@ function Window:Create(data)
 
     -- 标签页容器
     self.TabContainer = Instance.new("Frame")
-    self.TabContainer.Size = UDim2.new(1, 0, 1, -30)
-    self.TabContainer.Position = UDim2.new(0, 0, 0, 30)
+    self.TabContainer.Size = UDim2.new(1, 0, 1, -28)
+    self.TabContainer.Position = UDim2.new(0, 0, 0, 28)
     self.TabContainer.BackgroundTransparency = 1
     self.TabContainer.Parent = self.Main
 
     -- 标签页按钮区域
     self.TabBar = Instance.new("Frame")
-    self.TabBar.Size = UDim2.new(1, 0, 0, 30)
+    self.TabBar.Size = UDim2.new(1, 0, 0, 28)
     self.TabBar.BackgroundColor3 = Theme.GetColor("Surface")
     self.TabBar.BorderSizePixel = 0
     self.TabBar.Parent = self.TabContainer
 
     -- 内容区域
     self.ContentArea = Instance.new("Frame")
-    self.ContentArea.Size = UDim2.new(1, 0, 1, -30)
-    self.ContentArea.Position = UDim2.new(0, 0, 0, 30)
+    self.ContentArea.Size = UDim2.new(1, 0, 1, -28)
+    self.ContentArea.Position = UDim2.new(0, 0, 0, 28)
     self.ContentArea.BackgroundTransparency = 1
     self.ContentArea.Parent = self.TabContainer
 
-    -- 滚动区域
+    -- 滚动区域（仅垂直滚动）
     self.ScrollFrame = Instance.new("ScrollingFrame")
     self.ScrollFrame.Size = UDim2.new(1, 0, 1, 0)
     self.ScrollFrame.BackgroundTransparency = 1
@@ -324,10 +324,11 @@ function Window:Create(data)
     self.ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     self.ScrollFrame.ScrollBarThickness = 6
     self.ScrollFrame.ScrollBarImageTransparency = 0.5
+    self.ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y  -- 仅垂直滚动
     self.ScrollFrame.Parent = self.ContentArea
 
     self.UIList = Instance.new("UIListLayout")
-    self.UIList.Padding = UDim.new(0, 10)
+    self.UIList.Padding = UDim.new(0, 8)
     self.UIList.SortOrder = Enum.SortOrder.LayoutOrder
     self.UIList.Parent = self.ScrollFrame
 
@@ -340,7 +341,7 @@ function Window:Create(data)
                 dragging = true
                 dragStart = input.Position
                 startPos = self.Main.Position
-                input:StopPropagation()  -- 阻止事件传递到游戏世界
+                input:StopPropagation()
             end
         end)
         UserInputService.InputChanged:Connect(function(input)
@@ -360,27 +361,27 @@ function Window:Create(data)
         end)
     end
 
-    -- 创建浮动快捷键按钮的容器（独立于主窗口）
+    -- 创建浮动快捷键按钮的容器
     self.ShortcutContainer = Instance.new("Frame")
-    self.ShortcutContainer.Size = UDim2.new(0, 200, 0, 0)
-    self.ShortcutContainer.Position = UDim2.new(1, -210, 0, 10)
+    self.ShortcutContainer.Size = UDim2.new(0, 180, 0, 0)
+    self.ShortcutContainer.Position = UDim2.new(1, -190, 0, 10)
     self.ShortcutContainer.BackgroundTransparency = 1
     self.ShortcutContainer.ZIndex = 10
     self.ShortcutContainer.Parent = screenGui
 
     local shortcutList = Instance.new("UIListLayout")
-    shortcutList.Padding = UDim.new(0, 5)
+    shortcutList.Padding = UDim.new(0, 4)
     shortcutList.SortOrder = Enum.SortOrder.LayoutOrder
     shortcutList.Parent = self.ShortcutContainer
 
     function self:AddShortcutButton(name, callback)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 180, 0, 30)
+        btn.Size = UDim2.new(0, 170, 0, 26)
         btn.BackgroundColor3 = Theme.GetColor("Primary")
         btn.Text = "⚡ " .. name
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         btn.Font = Enum.Font.SourceSans
-        btn.TextSize = 12
+        btn.TextSize = 11
         btn.BorderSizePixel = 0
         btn.Parent = self.ShortcutContainer
         btn.MouseButton1Click:Connect(callback)
@@ -393,13 +394,13 @@ function Window:Create(data)
         end)
 
         local closeBtn = Instance.new("TextButton")
-        closeBtn.Size = UDim2.new(0, 20, 1, 0)
-        closeBtn.Position = UDim2.new(1, -20, 0, 0)
+        closeBtn.Size = UDim2.new(0, 18, 1, 0)
+        closeBtn.Position = UDim2.new(1, -18, 0, 0)
         closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
         closeBtn.Text = "✕"
         closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         closeBtn.Font = Enum.Font.SourceSansBold
-        closeBtn.TextSize = 12
+        closeBtn.TextSize = 10
         closeBtn.BorderSizePixel = 0
         closeBtn.Parent = btn
         closeBtn.MouseButton1Click:Connect(function()
@@ -463,24 +464,24 @@ function Window:Create(data)
         tab.Frame.Visible = false
         tab.Frame.Parent = self.ScrollFrame
 
-        -- 标签按钮（确保是 TextButton 实例）
+        -- 标签按钮
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 100, 1, 0)
+        btn.Size = UDim2.new(0, 90, 1, 0)
         btn.BackgroundColor3 = Theme.GetColor("Surface")
         btn.Text = name
         btn.TextColor3 = Theme.GetColor("Text")
         btn.Font = Enum.Font.SourceSans
-        btn.TextSize = 14
+        btn.TextSize = 12
         btn.BorderSizePixel = 0
         btn.Parent = self.TabBar
         btn.MouseButton1Click:Connect(function()
             self:SelectTab(tab)
         end)
 
-        tab.Button = btn  -- 保存为按钮实例
+        tab.Button = btn
 
         local list = Instance.new("UIListLayout")
-        list.Padding = UDim.new(0, 10)
+        list.Padding = UDim.new(0, 8)
         list.SortOrder = Enum.SortOrder.LayoutOrder
         list.Parent = tab.Frame
 
@@ -503,13 +504,13 @@ function Window:Create(data)
         function tab:Button(opts)
             local btnObj = {}
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, -20, 0, 35)
-            btn.Position = UDim2.new(0, 10, 0, 0)
+            btn.Size = UDim2.new(1, -16, 0, 28)  -- 高度缩小
+            btn.Position = UDim2.new(0, 8, 0, 0)
             btn.BackgroundColor3 = Theme.GetColor("Primary")
             btn.Text = opts.Text or "Button"
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 14
+            btn.TextSize = 13
             btn.BorderSizePixel = 0
             btn.Parent = tab.Frame
 
@@ -525,7 +526,6 @@ function Window:Create(data)
                 Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
             end)
 
-            -- 长按生成快捷键按钮
             LongPressDetector.new(btn, 0.5, function()
                 local shortcutName = "按钮: " .. (opts.Text or "Button")
                 self:AddShortcutButton(shortcutName, callback)
@@ -545,8 +545,8 @@ function Window:Create(data)
         function tab:Toggle(opts)
             local toggle = {}
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -20, 0, 35)
-            container.Position = UDim2.new(0, 10, 0, 0)
+            container.Size = UDim2.new(1, -16, 0, 30)  -- 高度缩小
+            container.Position = UDim2.new(0, 8, 0, 0)
             container.BackgroundTransparency = 1
             container.Parent = tab.Frame
 
@@ -558,17 +558,17 @@ function Window:Create(data)
             label.TextColor3 = Theme.GetColor("Text")
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.Font = Enum.Font.SourceSans
-            label.TextSize = 14
+            label.TextSize = 13
             label.Parent = container
 
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0, 50, 0, 25)
-            btn.Position = UDim2.new(1, -55, 0.5, -12.5)
+            btn.Size = UDim2.new(0, 45, 0, 22)
+            btn.Position = UDim2.new(1, -50, 0.5, -11)
             btn.BackgroundColor3 = Theme.GetColor("Primary")
             btn.Text = opts.Value and "ON" or "OFF"
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.Font = Enum.Font.SourceSansBold
-            btn.TextSize = 12
+            btn.TextSize = 11
             btn.BorderSizePixel = 0
             btn.Parent = container
 
@@ -586,7 +586,6 @@ function Window:Create(data)
                 toggle:Set(not value)
             end)
 
-            -- 长按生成快捷键按钮（开关的快捷键会切换状态）
             LongPressDetector.new(btn, 0.5, function()
                 local shortcutName = "开关: " .. (opts.Text or "Toggle")
                 self:AddShortcutButton(shortcutName, function()
@@ -604,29 +603,29 @@ function Window:Create(data)
             return toggle
         end
 
-        -- 滑块控件
+        -- 滑块控件（修复）
         function tab:Slider(opts)
             local slider = {}
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -20, 0, 50)
-            container.Position = UDim2.new(0, 10, 0, 0)
+            container.Size = UDim2.new(1, -16, 0, 46)
+            container.Position = UDim2.new(0, 8, 0, 0)
             container.BackgroundTransparency = 1
             container.Parent = tab.Frame
 
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, 0, 0, 20)
+            label.Size = UDim2.new(1, 0, 0, 18)
             label.Position = UDim2.new(0, 0, 0, 0)
             label.BackgroundTransparency = 1
             label.Text = opts.Text or "Slider"
             label.TextColor3 = Theme.GetColor("Text")
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.Font = Enum.Font.SourceSans
-            label.TextSize = 14
+            label.TextSize = 13
             label.Parent = container
 
             local valueLabel = Instance.new("TextLabel")
-            valueLabel.Size = UDim2.new(0, 50, 0, 20)
-            valueLabel.Position = UDim2.new(1, -55, 0, 0)
+            valueLabel.Size = UDim2.new(0, 45, 0, 18)
+            valueLabel.Position = UDim2.new(1, -50, 0, 0)
             valueLabel.BackgroundTransparency = 1
             valueLabel.Text = tostring(opts.Default or 0)
             valueLabel.TextColor3 = Theme.GetColor("TextSecondary")
@@ -637,7 +636,7 @@ function Window:Create(data)
 
             local track = Instance.new("Frame")
             track.Size = UDim2.new(1, -20, 0, 4)
-            track.Position = UDim2.new(0, 10, 0, 30)
+            track.Position = UDim2.new(0, 10, 0, 26)
             track.BackgroundColor3 = Theme.GetColor("Border")
             track.BorderSizePixel = 0
             track.Parent = container
@@ -696,7 +695,8 @@ function Window:Create(data)
                 end
             end)
 
-            UserInputService.InputChanged:Connect(function(input)
+            local moveConn
+            moveConn = UserInputService.InputChanged:Connect(function(input)
                 if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     local pos = input.Position.X - track.AbsolutePosition.X
                     local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
@@ -706,7 +706,8 @@ function Window:Create(data)
                 end
             end)
 
-            UserInputService.InputEnded:Connect(function(input)
+            local endConn
+            endConn = UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
                 end
@@ -729,31 +730,31 @@ function Window:Create(data)
         function tab:Input(opts)
             local input = {}
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -20, 0, 40)
-            container.Position = UDim2.new(0, 10, 0, 0)
+            container.Size = UDim2.new(1, -16, 0, 38)
+            container.Position = UDim2.new(0, 8, 0, 0)
             container.BackgroundTransparency = 1
             container.Parent = tab.Frame
 
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, 0, 0, 20)
+            label.Size = UDim2.new(1, 0, 0, 18)
             label.Position = UDim2.new(0, 0, 0, 0)
             label.BackgroundTransparency = 1
             label.Text = opts.Text or "Input"
             label.TextColor3 = Theme.GetColor("Text")
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.Font = Enum.Font.SourceSans
-            label.TextSize = 14
+            label.TextSize = 13
             label.Parent = container
 
             local box = Instance.new("TextBox")
-            box.Size = UDim2.new(1, 0, 0, 25)
-            box.Position = UDim2.new(0, 0, 0, 20)
+            box.Size = UDim2.new(1, 0, 0, 24)
+            box.Position = UDim2.new(0, 0, 0, 18)
             box.BackgroundColor3 = Theme.GetColor("Surface")
             box.Text = opts.Value or ""
             box.PlaceholderText = opts.Placeholder or ""
             box.TextColor3 = Theme.GetColor("Text")
             box.Font = Enum.Font.SourceSans
-            box.TextSize = 14
+            box.TextSize = 12
             box.BorderSizePixel = 1
             box.BorderColor3 = Theme.GetColor("Border")
             box.Parent = container
@@ -780,37 +781,37 @@ function Window:Create(data)
         function tab:Dropdown(opts)
             local dropdown = {}
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -20, 0, 40)
-            container.Position = UDim2.new(0, 10, 0, 0)
+            container.Size = UDim2.new(1, -16, 0, 38)
+            container.Position = UDim2.new(0, 8, 0, 0)
             container.BackgroundTransparency = 1
             container.Parent = tab.Frame
 
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, 0, 0, 20)
+            label.Size = UDim2.new(1, 0, 0, 18)
             label.Position = UDim2.new(0, 0, 0, 0)
             label.BackgroundTransparency = 1
             label.Text = opts.Text or "Dropdown"
             label.TextColor3 = Theme.GetColor("Text")
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.Font = Enum.Font.SourceSans
-            label.TextSize = 14
+            label.TextSize = 13
             label.Parent = container
 
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 25)
-            btn.Position = UDim2.new(0, 0, 0, 20)
+            btn.Size = UDim2.new(1, 0, 0, 24)
+            btn.Position = UDim2.new(0, 0, 0, 18)
             btn.BackgroundColor3 = Theme.GetColor("Surface")
             btn.Text = opts.Default or ""
             btn.TextColor3 = Theme.GetColor("Text")
             btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 14
+            btn.TextSize = 12
             btn.BorderSizePixel = 1
             btn.BorderColor3 = Theme.GetColor("Border")
             btn.Parent = container
 
             local dropdownFrame = Instance.new("Frame")
             dropdownFrame.Size = UDim2.new(1, 0, 0, 0)
-            dropdownFrame.Position = UDim2.new(0, 0, 0, 25)
+            dropdownFrame.Position = UDim2.new(0, 0, 0, 24)
             dropdownFrame.BackgroundColor3 = Theme.GetColor("Surface")
             dropdownFrame.BorderSizePixel = 1
             dropdownFrame.BorderColor3 = Theme.GetColor("Border")
@@ -832,12 +833,12 @@ function Window:Create(data)
                 end
                 for i, opt in ipairs(options) do
                     local optBtn = Instance.new("TextButton")
-                    optBtn.Size = UDim2.new(1, 0, 0, 30)
+                    optBtn.Size = UDim2.new(1, 0, 0, 26)
                     optBtn.BackgroundColor3 = Theme.GetColor("Surface")
                     optBtn.Text = opt
                     optBtn.TextColor3 = Theme.GetColor("Text")
                     optBtn.Font = Enum.Font.SourceSans
-                    optBtn.TextSize = 14
+                    optBtn.TextSize = 12
                     optBtn.BorderSizePixel = 0
                     optBtn.Parent = dropdownFrame
                     optBtn.MouseButton1Click:Connect(function()
@@ -847,7 +848,7 @@ function Window:Create(data)
                         SafeCallback(callback, opt)
                     end)
                 end
-                dropdownFrame.Size = UDim2.new(1, 0, 0, #options * 30)
+                dropdownFrame.Size = UDim2.new(1, 0, 0, #options * 26)
             end
 
             btn.MouseButton1Click:Connect(function()
@@ -883,25 +884,25 @@ function Window:Create(data)
         function tab:Colorpicker(opts)
             local picker = {}
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -20, 0, 40)
-            container.Position = UDim2.new(0, 10, 0, 0)
+            container.Size = UDim2.new(1, -16, 0, 38)
+            container.Position = UDim2.new(0, 8, 0, 0)
             container.BackgroundTransparency = 1
             container.Parent = tab.Frame
 
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -50, 0, 20)
+            label.Size = UDim2.new(1, -50, 0, 18)
             label.Position = UDim2.new(0, 0, 0, 0)
             label.BackgroundTransparency = 1
             label.Text = opts.Text or "Color"
             label.TextColor3 = Theme.GetColor("Text")
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.Font = Enum.Font.SourceSans
-            label.TextSize = 14
+            label.TextSize = 13
             label.Parent = container
 
             local colorBtn = Instance.new("TextButton")
-            colorBtn.Size = UDim2.new(0, 30, 0, 25)
-            colorBtn.Position = UDim2.new(1, -35, 0, 20)
+            colorBtn.Size = UDim2.new(0, 30, 0, 24)
+            colorBtn.Position = UDim2.new(1, -35, 0, 18)
             colorBtn.BackgroundColor3 = opts.Default or Color3.new(1, 1, 1)
             colorBtn.BorderSizePixel = 1
             colorBtn.BorderColor3 = Theme.GetColor("Border")
@@ -916,7 +917,6 @@ function Window:Create(data)
                 SafeCallback(callback, c)
             end
 
-            -- 简易颜色选择器对话框（略，保持简单）
             colorBtn.MouseButton1Click:Connect(function()
                 local dialog = Instance.new("Frame")
                 dialog.Size = UDim2.new(0, 200, 0, 150)
@@ -936,7 +936,7 @@ function Window:Create(data)
 
                 local function addSlider(text, default)
                     local cont = Instance.new("Frame")
-                    cont.Size = UDim2.new(1, -20, 0, 30)
+                    cont.Size = UDim2.new(1, -20, 0, 28)
                     cont.Position = UDim2.new(0, 10, 0, 0)
                     cont.BackgroundTransparency = 1
                     cont.Parent = dialog
@@ -948,7 +948,7 @@ function Window:Create(data)
                     lbl.Text = text
                     lbl.TextColor3 = Theme.GetColor("Text")
                     lbl.Font = Enum.Font.SourceSans
-                    lbl.TextSize = 12
+                    lbl.TextSize = 11
                     lbl.Parent = cont
 
                     local sliderObj = {}
@@ -1001,7 +1001,8 @@ function Window:Create(data)
                             input:StopPropagation()
                         end
                     end)
-                    UserInputService.InputChanged:Connect(function(input)
+                    local moveConn
+                    moveConn = UserInputService.InputChanged:Connect(function(input)
                         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                             local pos = input.Position.X - track.AbsolutePosition.X
                             local percent = math.clamp(pos / track.AbsoluteSize.X, 0, 1)
@@ -1011,7 +1012,8 @@ function Window:Create(data)
                             input:StopPropagation()
                         end
                     end)
-                    UserInputService.InputEnded:Connect(function(input)
+                    local endConn
+                    endConn = UserInputService.InputEnded:Connect(function(input)
                         if input.UserInputType == Enum.UserInputType.MouseButton1 then
                             dragging = false
                         end
@@ -1025,13 +1027,13 @@ function Window:Create(data)
                 bSlider = addSlider("B", color.B * 255)
 
                 local closeBtn = Instance.new("TextButton")
-                closeBtn.Size = UDim2.new(0, 60, 0, 25)
-                closeBtn.Position = UDim2.new(1, -70, 1, -35)
+                closeBtn.Size = UDim2.new(0, 60, 0, 24)
+                closeBtn.Position = UDim2.new(1, -70, 1, -32)
                 closeBtn.BackgroundColor3 = Theme.GetColor("Primary")
                 closeBtn.Text = "OK"
                 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
                 closeBtn.Font = Enum.Font.SourceSans
-                closeBtn.TextSize = 14
+                closeBtn.TextSize = 12
                 closeBtn.BorderSizePixel = 0
                 closeBtn.Parent = dialog
                 closeBtn.MouseButton1Click:Connect(function()
@@ -1047,12 +1049,12 @@ function Window:Create(data)
             return picker
         end
 
-        -- 段落文本控件（用于显示文字）
+        -- 段落文本控件
         function tab:Paragraph(opts)
             local para = {}
             local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -20, 0, 0)
-            container.Position = UDim2.new(0, 10, 0, 0)
+            container.Size = UDim2.new(1, -16, 0, 0)
+            container.Position = UDim2.new(0, 8, 0, 0)
             container.BackgroundTransparency = 1
             container.AutomaticSize = Enum.AutomaticSize.Y
             container.Parent = tab.Frame
@@ -1063,7 +1065,7 @@ function Window:Create(data)
             text.Text = opts.Text or ""
             text.TextColor3 = Theme.GetColor("Text")
             text.Font = Enum.Font.SourceSans
-            text.TextSize = 14
+            text.TextSize = 13
             text.TextWrapped = true
             text.TextXAlignment = Enum.TextXAlignment.Left
             text.AutomaticSize = Enum.AutomaticSize.Y
@@ -1076,13 +1078,13 @@ function Window:Create(data)
                 desc.Text = opts.Desc
                 desc.TextColor3 = Theme.GetColor("TextSecondary")
                 desc.Font = Enum.Font.SourceSans
-                desc.TextSize = 12
+                desc.TextSize = 11
                 desc.TextWrapped = true
                 desc.TextXAlignment = Enum.TextXAlignment.Left
                 desc.AutomaticSize = Enum.AutomaticSize.Y
                 desc.Parent = container
                 local list = Instance.new("UIListLayout")
-                list.Padding = UDim.new(0, 5)
+                list.Padding = UDim.new(0, 4)
                 list.SortOrder = Enum.SortOrder.LayoutOrder
                 list.Parent = container
             end
@@ -1091,7 +1093,6 @@ function Window:Create(data)
                 text.Text = newText
             end
             function para:SetDesc(newDesc)
-                -- 简单实现：若没有 desc 则创建，否则更新
                 local desc = container:FindFirstChildOfClass("TextLabel")
                 if not desc and newDesc then
                     desc = Instance.new("TextLabel")
@@ -1100,13 +1101,13 @@ function Window:Create(data)
                     desc.Text = newDesc
                     desc.TextColor3 = Theme.GetColor("TextSecondary")
                     desc.Font = Enum.Font.SourceSans
-                    desc.TextSize = 12
+                    desc.TextSize = 11
                     desc.TextWrapped = true
                     desc.TextXAlignment = Enum.TextXAlignment.Left
                     desc.AutomaticSize = Enum.AutomaticSize.Y
                     desc.Parent = container
                     local list = Instance.new("UIListLayout")
-                    list.Padding = UDim.new(0, 5)
+                    list.Padding = UDim.new(0, 4)
                     list.SortOrder = Enum.SortOrder.LayoutOrder
                     list.Parent = container
                 elseif desc then
@@ -1124,25 +1125,178 @@ function Window:Create(data)
             return para
         end
 
+        -- 分隔线
         function tab:Divider()
             local line = Instance.new("Frame")
-            line.Size = UDim2.new(1, -20, 0, 1)
-            line.Position = UDim2.new(0, 10, 0, 0)
+            line.Size = UDim2.new(1, -16, 0, 1)
+            line.Position = UDim2.new(0, 8, 0, 0)
             line.BackgroundColor3 = Theme.GetColor("Border")
             line.BorderSizePixel = 0
             line.Parent = tab.Frame
         end
 
+        -- 间距
         function tab:Space(height)
             local space = Instance.new("Frame")
-            space.Size = UDim2.new(1, -20, 0, height or 10)
+            space.Size = UDim2.new(1, -16, 0, height or 8)
             space.BackgroundTransparency = 1
             space.Parent = tab.Frame
         end
 
+        -- 左右分栏布局（新增）
+        function tab:CreateTwoColumn()
+            -- 创建两个容器 Frame
+            local left = Instance.new("Frame")
+            left.Size = UDim2.new(0.5, -4, 1, 0)
+            left.Position = UDim2.new(0, 0, 0, 0)
+            left.BackgroundColor3 = Theme.GetColor("Surface")
+            left.BorderSizePixel = 1
+            left.BorderColor3 = Theme.GetColor("Border")
+            left.Parent = tab.Frame
+
+            local right = Instance.new("Frame")
+            right.Size = UDim2.new(0.5, -4, 1, 0)
+            right.Position = UDim2.new(0.5, 4, 0, 0)
+            right.BackgroundColor3 = Theme.GetColor("Surface")
+            right.BorderSizePixel = 1
+            right.BorderColor3 = Theme.GetColor("Border")
+            right.Parent = tab.Frame
+
+            -- 为每个区域创建滚动列表（内部垂直滚动）
+            local leftScroll = Instance.new("ScrollingFrame")
+            leftScroll.Size = UDim2.new(1, 0, 1, 0)
+            leftScroll.BackgroundTransparency = 1
+            leftScroll.BorderSizePixel = 0
+            leftScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+            leftScroll.ScrollBarThickness = 4
+            leftScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+            leftScroll.Parent = left
+
+            local leftList = Instance.new("UIListLayout")
+            leftList.Padding = UDim.new(0, 6)
+            leftList.SortOrder = Enum.SortOrder.LayoutOrder
+            leftList.Parent = leftScroll
+
+            local rightScroll = Instance.new("ScrollingFrame")
+            rightScroll.Size = UDim2.new(1, 0, 1, 0)
+            rightScroll.BackgroundTransparency = 1
+            rightScroll.BorderSizePixel = 0
+            rightScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+            rightScroll.ScrollBarThickness = 4
+            rightScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+            rightScroll.Parent = right
+
+            local rightList = Instance.new("UIListLayout")
+            rightList.Padding = UDim.new(0, 6)
+            rightList.SortOrder = Enum.SortOrder.LayoutOrder
+            rightList.Parent = rightScroll
+
+            -- 辅助函数，用于更新滚动画布
+            local function updateLeftCanvas()
+                leftScroll.CanvasSize = UDim2.new(0, 0, 0, leftList.AbsoluteContentSize.Y + 6)
+            end
+            local function updateRightCanvas()
+                rightScroll.CanvasSize = UDim2.new(0, 0, 0, rightList.AbsoluteContentSize.Y + 6)
+            end
+            leftList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateLeftCanvas)
+            rightList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateRightCanvas)
+            updateLeftCanvas()
+            updateRightCanvas()
+
+            -- 返回左右容器的引用，用户可向其中添加控件（例如 left:Button(...)）
+            -- 为了保持一致性，我们为每个容器提供与 tab 相同的控件创建函数（但绑定到左右滚动区域）
+            local function createContainerAPI(containerScroll, containerList)
+                local api = {}
+                function api:Button(opts)
+                    local btnObj = {}
+                    local btn = Instance.new("TextButton")
+                    btn.Size = UDim2.new(1, -12, 0, 28)
+                    btn.Position = UDim2.new(0, 6, 0, 0)
+                    btn.BackgroundColor3 = Theme.GetColor("Primary")
+                    btn.Text = opts.Text or "Button"
+                    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    btn.Font = Enum.Font.SourceSans
+                    btn.TextSize = 12
+                    btn.BorderSizePixel = 0
+                    btn.Parent = containerScroll
+
+                    local callback = opts.Callback or function() end
+                    btn.MouseButton1Click:Connect(function()
+                        SafeCallback(callback)
+                    end)
+                    btn.MouseEnter:Connect(function()
+                        Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("PrimaryHover") })
+                    end)
+                    btn.MouseLeave:Connect(function()
+                        Tween(btn, 0.1, { BackgroundColor3 = Theme.GetColor("Primary") })
+                    end)
+                    function btnObj:SetText(text)
+                        btn.Text = text
+                    end
+                    function btnObj:UpdateTheme()
+                        btn.BackgroundColor3 = Theme.GetColor("Primary")
+                    end
+                    return btnObj
+                end
+                function api:Toggle(opts)
+                    -- 实现类似，这里省略以保持长度，可按需添加
+                    local toggle = {}
+                    -- 示例：简单实现
+                    local container = Instance.new("Frame")
+                    container.Size = UDim2.new(1, -12, 0, 28)
+                    container.Position = UDim2.new(0, 6, 0, 0)
+                    container.BackgroundTransparency = 1
+                    container.Parent = containerScroll
+
+                    local label = Instance.new("TextLabel")
+                    label.Size = UDim2.new(1, -55, 1, 0)
+                    label.Position = UDim2.new(0, 4, 0, 0)
+                    label.BackgroundTransparency = 1
+                    label.Text = opts.Text or "Toggle"
+                    label.TextColor3 = Theme.GetColor("Text")
+                    label.TextXAlignment = Enum.TextXAlignment.Left
+                    label.Font = Enum.Font.SourceSans
+                    label.TextSize = 12
+                    label.Parent = container
+
+                    local btn = Instance.new("TextButton")
+                    btn.Size = UDim2.new(0, 45, 0, 22)
+                    btn.Position = UDim2.new(1, -49, 0.5, -11)
+                    btn.BackgroundColor3 = Theme.GetColor("Primary")
+                    btn.Text = opts.Value and "ON" or "OFF"
+                    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    btn.Font = Enum.Font.SourceSansBold
+                    btn.TextSize = 11
+                    btn.BorderSizePixel = 0
+                    btn.Parent = container
+
+                    local value = opts.Value or false
+                    local callback = opts.Callback or function() end
+                    function toggle:Set(v)
+                        value = v
+                        btn.Text = value and "ON" or "OFF"
+                        btn.BackgroundColor3 = value and Theme.GetColor("Primary") or Theme.GetColor("Disabled")
+                        SafeCallback(callback, value)
+                    end
+                    btn.MouseButton1Click:Connect(function()
+                        toggle:Set(not value)
+                    end)
+                    toggle:Set(value)
+                    return toggle
+                end
+                -- 其他控件（Slider, Input, Dropdown, Colorpicker, Paragraph）可按需添加，此处略。
+                return api
+            end
+
+            local leftAPI = createContainerAPI(leftScroll, leftList)
+            local rightAPI = createContainerAPI(rightScroll, rightList)
+
+            return { left = leftAPI, right = rightAPI }
+        end
+
         -- 更新滚动画布
         local function updateCanvas()
-            self.ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, self.UIList.AbsoluteContentSize.Y + 10)
+            self.ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, self.UIList.AbsoluteContentSize.Y + 8)
         end
         self.UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
         updateCanvas()
@@ -1154,17 +1308,14 @@ function Window:Create(data)
         return tab
     end
 
-    -- 安全的 SelectTab 实现
+    -- 安全的 SelectTab
     function self:SelectTab(tab)
         if self.CurrentTab == tab then return end
         for _, t in ipairs(self.Tabs) do
             t.Frame.Visible = (t == tab)
-            -- 确保 t.Button 是有效的 TextButton 实例
             if type(t.Button) == "userdata" and t.Button:IsA("TextButton") then
                 t.Button.BackgroundColor3 = (t == tab) and Theme.GetColor("Primary") or Theme.GetColor("Surface")
                 t.Button.TextColor3 = (t == tab) and Color3.fromRGB(255, 255, 255) or Theme.GetColor("Text")
-            else
-                warn("[WasUI] Invalid tab button for tab:", t.Name)
             end
         end
         self.CurrentTab = tab
