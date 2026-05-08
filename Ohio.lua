@@ -9,20 +9,21 @@ local tabCounter = mainWindow:AddTab("反制")
 local tabBypass = mainWindow:AddTab("绕过")
 local tabWeapon = mainWindow:AddTab("武器")
 local tabVisual = mainWindow:AddTab("视觉")
+local tabRole = mainWindow:AddTab("角色")
 
-local plrs = game:GetService("Players")
-local rs = game:GetService("ReplicatedStorage")
-local runSvc = game:GetService("RunService")
-local ws = game:GetService("Workspace")
-local ts = game:GetService("TweenService")
-local db = game:GetService("Debris")
-local teleport = game:GetService("TeleportService")
-local textChat = game:GetService("TextChatService")
-local uis = game:GetService("UserInputService")
+local v1 = game:GetService("Players")
+local v2 = game:GetService("ReplicatedStorage")
+local v3 = game:GetService("RunService")
+local v4 = game:GetService("Workspace")
+local v5 = game:GetService("TweenService")
+local v6 = game:GetService("Debris")
+local v7 = game:GetService("TeleportService")
+local v8 = game:GetService("TextChatService")
+local v9 = game:GetService("UserInputService")
 
-local lp = plrs.LocalPlayer
-local Devv = require(rs.devv)
-local Remote = require(rs.devv.client.Helpers.remotes.Signal)
+local lp = v1.LocalPlayer
+local Devv = require(v2.devv)
+local Remote = require(v2.devv.client.Helpers.remotes.Signal)
 local Inventory = Devv.load("v3item").inventory
 local guid = Devv.load("GUID")
 local FireServer = Remote.FireServer
@@ -47,19 +48,19 @@ local function createTrace(targetPos)
     P.Name, P.Anchored, P.CanCollide, P.CastShadow = "Trace", true, false, false
     P.Material, P.Color, P.Size = Enum.Material.Neon, Color3.fromHSV(tick() % 1, 0.8, 1), Vector3.new(0.15, 0.15, mag)
     P.CFrame = CFrame.lookAt(S, targetPos) * CFrame.new(0, 0, -mag/2)
-    P.Parent = ws
+    P.Parent = v4
     local sound = Instance.new("Sound")
     sound.SoundId = "rbxassetid://5633695679"
     sound.Parent = P
     sound:Play()
-    db:AddItem(sound, 1)
-    ts:Create(P, TweenInfo.new(1), {Transparency = 1, Size = Vector3.new(0, 0, mag)}):Play()
-    db:AddItem(P, 1)
+    v6:AddItem(sound, 1)
+    v5:Create(P, TweenInfo.new(1), {Transparency = 1, Size = Vector3.new(0, 0, mag)}):Play()
+    v6:AddItem(P, 1)
 end
 
 local function throw()
     if getgenv().fbsx == "Gun Kill" then
-        local inv = require(rs.devv.client.Objects.v3item.modules.inventory)
+        local inv = require(v2.devv.client.Objects.v3item.modules.inventory)
         local gun = inv.getFromName("Raygun")
         if not gun then
             Remote.InvokeServer("attemptPurchase", "Raygun")
@@ -88,7 +89,7 @@ local function throw()
 end
 
 local initialList = {"ALL"}
-for _, p in pairs(plrs:GetPlayers()) do
+for _, p in pairs(v1:GetPlayers()) do
     if p ~= lp then table.insert(initialList, p.Name) end
 end
 
@@ -132,7 +133,7 @@ WasUI:CreateToggle(tabCombat, false, function(state) Auarcuff = state end, "逮�
 local childrenCache = {}
 local itemMap = {}
 local function updateCache()
-    local folder = ws.Game.Entities:FindFirstChild("ItemPickup")
+    local folder = v4.Game.Entities:FindFirstChild("ItemPickup")
     if not folder then return end
     childrenCache = folder:GetChildren()
     itemMap = {}
@@ -151,9 +152,9 @@ local function updateCache()
     end
 end
 updateCache()
-if ws.Game.Entities:FindFirstChild("ItemPickup") then
-    ws.Game.Entities.ItemPickup.ChildAdded:Connect(updateCache)
-    ws.Game.Entities.ItemPickup.ChildRemoved:Connect(updateCache)
+if v4.Game.Entities:FindFirstChild("ItemPickup") then
+    v4.Game.Entities.ItemPickup.ChildAdded:Connect(updateCache)
+    v4.Game.Entities.ItemPickup.ChildRemoved:Connect(updateCache)
 end
 
 local function Autoitem(itemName)
@@ -208,7 +209,7 @@ WasUI:CreateToggle(tabFind, false, function(state) FromBalloon = state end, "自
 
 WasUI:CreateCategory(tabCounter, "反制与工具")
 WasUI:CreateButton(tabCounter, "重进当前服务器", function()
-    teleport:TeleportToPlaceInstance(game.PlaceId, game.JobId, lp)
+    v7:TeleportToPlaceInstance(game.PlaceId, game.JobId, lp)
 end)
 
 local fakemoney = 0
@@ -216,7 +217,7 @@ local openfake = false
 WasUI:CreateTextInput(tabCounter, "弹窗提醒内容", "", function(v) getgenv().make = v end, "toast_msg")
 WasUI:CreateTextInput(tabCounter, "弹窗提醒时长(秒)", "", function(v) getgenv().makes = v end, "toast_dur")
 WasUI:CreateButton(tabCounter, "开启弹窗", function()
-    local reqload = require(rs.devv).load
+    local reqload = require(v2.devv).load
     local makeToast = reqload("makeToast")
     makeToast(getgenv().make, "rainbow", tonumber(getgenv().makes) or 5)
 end)
@@ -227,7 +228,7 @@ WasUI:CreateButton(tabCounter, "通话禁音", function()
 end)
 
 WasUI:CreateButton(tabCounter, "不允许战斗中", function()
-    local combatModule = require(rs.devv.client.Helpers.ui.combatIndicator)
+    local combatModule = require(v2.devv.client.Helpers.ui.combatIndicator)
     if hookfunction then
         hookfunction(combatModule.isInCombat, function() return false end)
         hookfunction(combatModule.enterCombat, function() end)
@@ -235,7 +236,7 @@ WasUI:CreateButton(tabCounter, "不允许战斗中", function()
 end)
 
 WasUI:CreateButton(tabCounter, "不允许被抓取", function()
-    local GrabHandler = require(rs.devv.client.Handlers.GrabHandler)
+    local GrabHandler = require(v2.devv.client.Handlers.GrabHandler)
     local orig = GrabHandler.CheckValid
     GrabHandler.CheckValid = function(p28, p29, p30)
         if p29 == lp then return false end
@@ -249,7 +250,7 @@ WasUI:CreateButton(tabCounter, "不允许被抓取", function()
 end)
 
 WasUI:CreateButton(tabCounter, "清除树叶", function()
-    for _, part in pairs(ws:GetDescendants()) do
+    for _, part in pairs(v4:GetDescendants()) do
         if part.Name == "Leaves" and part:IsA("MeshPart") then part:Destroy() end
     end
 end)
@@ -277,7 +278,7 @@ WasUI:CreateToggle(tabBypass, false, function(state)
 end, "开启伪装", nil, "fake_money_toggle")
 
 WasUI:CreateSlider(tabBypass, "物品栏数量", 6, 12, 9, function(value)
-    require(rs.devv.client.Objects.v3item.modules.inventory).numSlots = value
+    require(v2.devv.client.Objects.v3item.modules.inventory).numSlots = value
 end, "inv_slots")
 
 WasUI:CreateButton(tabBypass, "解锁移动经销商", function()
@@ -292,7 +293,7 @@ WasUI:CreateButton(tabBypass, "解锁移动经销商", function()
         return Purchase(self, ...)
     end
     lp:SetAttribute("mobileDealer", true)
-    local mobileDealer = require(rs.devv.shared.Indicies.mobileDealer)
+    local mobileDealer = require(v2.devv.shared.Indicies.mobileDealer)
     for cat, items in pairs(mobileDealer) do
         for _, item in ipairs(items) do item.stock = 12e12 end
     end
@@ -300,8 +301,8 @@ WasUI:CreateButton(tabBypass, "解锁移动经销商", function()
 end)
 
 WasUI:CreateButton(tabBypass, "解锁全皮肤", function()
-    local skinsModule = require(rs.devv.client.Helpers.ui.screens.CaseMenu.Skins)
-    local load = require(rs.devv).load
+    local skinsModule = require(v2.devv.client.Helpers.ui.screens.CaseMenu.Skins)
+    local load = require(v2.devv).load
     local state = load("state")
     hookfunction(skinsModule.AttemptEquip, function(self, itemName, skinName)
         if self:IsSkinEquipped(itemName, skinName) then return end
@@ -327,8 +328,8 @@ WasUI:CreateButton(tabBypass, "解锁高级表情", function()
 end)
 
 WasUI:CreateButton(tabBypass, "绕过火&酸伤害", function()
-    local fire = rs.devv.remoteStorage:FindFirstChild("fireHit")
-    local acid = rs.devv.remoteStorage:FindFirstChild("acidHit")
+    local fire = v2.devv.remoteStorage:FindFirstChild("fireHit")
+    local acid = v2.devv.remoteStorage:FindFirstChild("acidHit")
     if fire then fire:Destroy() end
     if acid then acid:Destroy() end
 end)
@@ -348,7 +349,7 @@ local bulletTrackRemote = nil
 local bulletTrackOriginal = nil
 
 local function findWeaponAimRemote()
-    local remoteStorage = rs:FindFirstChild("devv"):FindFirstChild("remoteStorage")
+    local remoteStorage = v2:FindFirstChild("devv"):FindFirstChild("remoteStorage")
     if not remoteStorage then return nil end
     for _, child in pairs(remoteStorage:GetChildren()) do
         if child:IsA("RemoteEvent") and child.Name ~= "fireHit" and child.Name ~= "acidHit" then
@@ -378,7 +379,7 @@ local function hookBulletTrack()
                 if myHead then
                     local closestHead = nil
                     local closestDist = math.huge
-                    for _, p in pairs(plrs:GetPlayers()) do
+                    for _, p in pairs(v1:GetPlayers()) do
                         if p ~= lp and p.Character then
                             local head = p.Character:FindFirstChild("Head")
                             if head then
@@ -411,6 +412,58 @@ WasUI:CreateToggle(tabWeapon, false, function(state)
     if state then hookBulletTrack() end
 end, "子弹追踪", nil, "bullet_track")
 
+WasUI:CreateButton(tabWeapon, "全枪据点", function()
+    local inv = Devv.load("v3item").inventory.items
+    for k,v in pairs(inv) do
+        if v.type == "Gun" then
+            v.baseSpread = 0
+            v.baseAimSpread = 0
+            v.spread = 0
+            v.aimSpread = 0
+        end
+    end
+    local gunTemplates = v2.devv.shared.Indicies.v3items.bin.Gun
+    for _, gunTemplate in pairs(gunTemplates:GetChildren()) do
+        if gunTemplate:IsA("ModuleScript") then
+            local template = require(gunTemplate)
+            template.baseSpread = 0
+            template.baseAimSpread = 0
+        end
+    end
+end)
+
+WasUI:CreateButton(tabWeapon, "全枪无后座", function()
+    for _, particle in pairs(game:GetDescendants()) do
+        if particle:IsA("ParticleEmitter") then
+            particle:Destroy()
+        end
+    end
+    game.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("ParticleEmitter") then
+            descendant:Destroy()
+        end
+    end)
+    local inv = Devv.load("v3item").inventory.items
+    for k,v in pairs(inv) do
+        if v.type == "Gun" then
+            v.recoilAdd = 0
+            v.maxRecoil = 0
+            v.recoilDiminishFactor = 0
+            v.recoilFastDiminishFactor = 0
+        end
+    end
+    local gunTemplates = v2.devv.shared.Indicies.v3items.bin.Gun
+    for _, gunTemplate in pairs(gunTemplates:GetChildren()) do
+        if gunTemplate:IsA("ModuleScript") then
+            local template = require(gunTemplate)
+            template.recoilAdd = 0
+            template.maxRecoil = 0
+            template.recoilDiminishFactor = 0
+            template.recoilFastDiminishFactor = 0
+        end
+    end
+end)
+
 local playerESP = {}
 local playerESPEnabled = false
 
@@ -428,7 +481,7 @@ local function updatePlayerESP()
         return
     end
     local existing = {}
-    for _, p in pairs(plrs:GetPlayers()) do
+    for _, p in pairs(v1:GetPlayers()) do
         if p ~= lp and p.Character then
             local head = p.Character:FindFirstChild("Head")
             if head then
@@ -468,7 +521,7 @@ local function updatePlayerESP()
             playerESP[p] = nil
         end
     end
-    local cam = ws.CurrentCamera
+    local cam = v4.CurrentCamera
     if cam then
         for p, esp in pairs(playerESP) do
             if p.Character and p.Character:FindFirstChild("Head") then
@@ -500,19 +553,19 @@ end
 oldIndex = hookfunction(mt.__index, hookIndex)
 setreadonly(mt, true)
 
-textChat.ChatWindowConfiguration.Enabled = true
-local banned = rs:FindFirstChild("devv"):FindFirstChild("remoteStorage"):FindFirstChild("makeExplosion")
+v8.ChatWindowConfiguration.Enabled = true
+local banned = v2:FindFirstChild("devv"):FindFirstChild("remoteStorage"):FindFirstChild("makeExplosion")
 if banned then banned:Destroy() end
 
 local function modifyHitboxes()
-    local dream = ws:FindFirstChild("Dream91786767")
+    local dream = v4:FindFirstChild("Dream91786767")
     if not dream then return end
     local hitboxContainer = dream:FindFirstChild("Hitbox")
     if not hitboxContainer then return end
     for _, part in pairs(hitboxContainer:GetChildren()) do
         if part:IsA("BasePart") then
             local isSelf = false
-            for _, player in pairs(plrs:GetPlayers()) do
+            for _, player in pairs(v1:GetPlayers()) do
                 if player == lp and (part.Name == lp.Name or string.find(part.Name, lp.Name)) then
                     isSelf = true
                     break
@@ -525,13 +578,89 @@ local function modifyHitboxes()
     end
 end
 
-runSvc.Heartbeat:Connect(function(dt)
+local speedEnabled = false
+local speedValue = 16
+local noclipEnabled = false
+local noclipLoop = nil
+local nightVisionEnabled = false
+local originalBrightness, originalAmbient, originalOutdoorAmbient
+
+local function setNightVision(enabled)
+    local lighting = game:GetService("Lighting")
+    if enabled then
+        originalBrightness = lighting.Brightness
+        originalAmbient = lighting.Ambient
+        originalOutdoorAmbient = lighting.OutdoorAmbient
+        lighting.Brightness = 2
+        lighting.Ambient = Color3.new(1, 1, 1)
+        lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+        lighting.FogEnd = 1000
+    else
+        if originalBrightness then lighting.Brightness = originalBrightness end
+        if originalAmbient then lighting.Ambient = originalAmbient end
+        if originalOutdoorAmbient then lighting.OutdoorAmbient = originalOutdoorAmbient end
+    end
+end
+
+WasUI:CreateCategory(tabRole, "移动能力")
+WasUI:CreateToggle(tabRole, false, function(state)
+    speedEnabled = state
+    local char = lp.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = state and speedValue or 16 end
+end, "加速", nil, "speed_toggle")
+
+WasUI:CreateSlider(tabRole, "速度值", 16, 200, 16, function(value)
+    speedValue = value
+    if speedEnabled then
+        local char = lp.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = value end
+    end
+end, "speed_value")
+
+WasUI:CreateToggle(tabRole, false, function(state)
+    noclipEnabled = state
+    if noclipEnabled then
+        if noclipLoop then task.cancel(noclipLoop) end
+        noclipLoop = task.spawn(function()
+            while noclipEnabled do
+                local char = lp.Character
+                if char then
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+                task.wait()
+            end
+        end)
+    else
+        if noclipLoop then task.cancel(noclipLoop); noclipLoop = nil end
+        local char = lp.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end, "穿墙", nil, "noclip_toggle")
+
+WasUI:CreateToggle(tabRole, false, function(state)
+    nightVisionEnabled = state
+    setNightVision(state)
+end, "夜视", nil, "night_vision")
+
+v3.Heartbeat:Connect(function(dt)
     if aurablade or tpplayfb or isBlinkActive then
         local target, dist = nil, math.huge
         local myChar = lp.Character
         if myChar and myChar:FindFirstChild("HumanoidRootPart") then
             local myRoot = myChar.HumanoidRootPart
-            for _, v in pairs(plrs:GetPlayers()) do
+            for _, v in pairs(v1:GetPlayers()) do
                 local isTarget = (#targetPlayers == 0) or table.find(targetPlayers, "ALL") or table.find(targetPlayers, v.Name)
                 if not isTarget then continue end
                 if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 and not v.Character:FindFirstChildOfClass("ForceField") and not lp:IsFriendsWith(v.UserId) then
@@ -579,7 +708,7 @@ runSvc.Heartbeat:Connect(function(dt)
                                                 hitSize = target.Size,
                                                 hitPart = target,
                                                 pos = targetPos,
-                                                hitPlayerId = plrs:GetPlayerFromCharacter(target.Parent).UserId
+                                                hitPlayerId = v1:GetPlayerFromCharacter(target.Parent).UserId
                                             })
                                             item.ammoManager.ammo = item.ammoManager.ammo - 1
                                         else
@@ -610,7 +739,7 @@ runSvc.Heartbeat:Connect(function(dt)
                                             hitSize = target.Size,
                                             hitPart = target,
                                             pos = targetPos,
-                                            hitPlayerId = plrs:GetPlayerFromCharacter(target.Parent).UserId
+                                            hitPlayerId = v1:GetPlayerFromCharacter(target.Parent).UserId
                                         })
                                         item.ammoManager.ammo = item.ammoManager.ammo - 1
                                     else
@@ -634,7 +763,7 @@ runSvc.Heartbeat:Connect(function(dt)
         local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
             local dist, target = math.huge, nil
-            for _, v in pairs(ws.ATMs:GetChildren()) do
+            for _, v in pairs(v4.ATMs:GetChildren()) do
                 if v:IsA("Model") and (v:GetAttribute("health") or 0) > 0 then
                     local d = (hrp.Position - v:GetPivot().Position).Magnitude
                     if d < dist then dist, target = d, v end
@@ -655,7 +784,7 @@ runSvc.Heartbeat:Connect(function(dt)
     end
 
     if FromBank then
-        local Robbery = ws:FindFirstChild("BankRobbery")
+        local Robbery = v4:FindFirstChild("BankRobbery")
         if Robbery then
             local Vault = Robbery:FindFirstChild("VaultDoor")
             local VPos = Vault and (Vault:IsA("Model") and Vault:GetPivot().Position or Vault.Position)
@@ -696,7 +825,7 @@ runSvc.Heartbeat:Connect(function(dt)
             getgenv()._lastChest = tick()
             local chestTypes = {"SmallChest", "LargeChest", "SmallSafe", "MediumSafe", "LargeSafe", "JewelSafe", "GoldJewelSafe"}
             for _, chestType in pairs(chestTypes) do
-                local chestFolder = ws.Game.Entities:FindFirstChild(chestType)
+                local chestFolder = v4.Game.Entities:FindFirstChild(chestType)
                 if chestFolder then
                     for _, chest in pairs(chestFolder:GetChildren()) do
                         if chest.PrimaryPart then
@@ -714,7 +843,7 @@ runSvc.Heartbeat:Connect(function(dt)
 
     if autozbd and tick() - zbtick >= 0.3 then
         zbtick = tick()
-        local cases = ws:FindFirstChild("GemRobbery"):FindFirstChild("JewelryCases")
+        local cases = v4:FindFirstChild("GemRobbery"):FindFirstChild("JewelryCases")
         if cases then
             for _, descendant in pairs(cases:GetDescendants()) do
                 if descendant:IsA("ProximityPrompt") and descendant.ActionText == "Steal" and descendant.Enabled then
@@ -795,7 +924,7 @@ runSvc.Heartbeat:Connect(function(dt)
     end
     if callphone and tick() - (getgenv().lastCall or 0) >= 0.5 then
         getgenv().lastCall = tick()
-        for _, p in plrs:GetPlayers() do
+        for _, p in v1:GetPlayers() do
             if p ~= lp then
                 task.spawn(function()
                     local ok, id = InvokeServer("attemptCall", p.UserId)
@@ -814,12 +943,12 @@ runSvc.Heartbeat:Connect(function(dt)
         else
             local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
             if root then
-                for _, player in ipairs(plrs:GetPlayers()) do
+                for _, player in ipairs(v1:GetPlayers()) do
                     if player ~= lp and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                         local hum = player.Character:FindFirstChild("Humanoid")
                         if hum and hum.Health > 0 and hum.Health < 5 then
                             if (root.Position - player.Character.HumanoidRootPart.Position).Magnitude <= 30 then
-                                if not require(rs.devv).load("ClientReplicator").Get(player, "cuffed") then
+                                if not require(v2.devv).load("ClientReplicator").Get(player, "cuffed") then
                                     FireServer("equip", Handcuffs)
                                     FireServer("cuffPlayer", player)
                                 end
@@ -858,7 +987,7 @@ runSvc.Heartbeat:Connect(function(dt)
         if not hasCard then Autoitem("Military Armory Keycard") end
     end
     if FromBalloon then
-        for _, v in pairs(rs.devv.shared.Indicies.v3items.bin.Holdable:GetChildren()) do
+        for _, v in pairs(v2.devv.shared.Indicies.v3items.bin.Holdable:GetChildren()) do
             if v:IsA("ModuleScript") and require(v).holdableType == "Balloon" and require(v).name ~= "Balloon" then
                 Autoitem(v.Name)
             end
@@ -868,13 +997,13 @@ runSvc.Heartbeat:Connect(function(dt)
     if AntiDoll then
         if lp:GetAttribute("isRagdoll") then
             FireServer("setRagdoll", false)
-            require(rs.devv).load("ClientReplicator").Set(lp, "ragdolled", false)
+            require(v2.devv).load("ClientReplicator").Set(lp, "ragdolled", false)
             lp:SetAttribute("isRagdoll", false)
         end
     end
 
     if openfake and fakemoney then
-        local moneyDisplay = require(rs.devv).load("moneyDisplay")
+        local moneyDisplay = require(v2.devv).load("moneyDisplay")
         moneyDisplay.current = fakemoney
         moneyDisplay.tweenTo = fakemoney
         local eq = Devv.load("v3item").inventory.getEquipped()
@@ -889,11 +1018,35 @@ runSvc.Heartbeat:Connect(function(dt)
 end)
 
 local isVisible = true
-uis.InputBegan:Connect(function(input, processed)
+v9.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.F1 then
         isVisible = not isVisible
         mainWindow:SetVisible(isVisible)
+    end
+end)
+
+lp.CharacterAdded:Connect(function()
+    if speedEnabled then
+        local char = lp.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = speedValue end
+    end
+    if noclipEnabled then
+        if noclipLoop then task.cancel(noclipLoop) end
+        noclipLoop = task.spawn(function()
+            while noclipEnabled do
+                local char = lp.Character
+                if char then
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+                task.wait()
+            end
+        end)
     end
 end)
 
