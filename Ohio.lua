@@ -580,42 +580,50 @@ end
 
 local speedEnabled = false
 local speedValue = 16
+local speedLoop = nil
+
 local noclipEnabled = false
 local noclipLoop = nil
-local nightVisionEnabled = false
-local originalBrightness, originalAmbient, originalOutdoorAmbient
-
-local function setNightVision(enabled)
-    local lighting = game:GetService("Lighting")
-    if enabled then
-        originalBrightness = lighting.Brightness
-        originalAmbient = lighting.Ambient
-        originalOutdoorAmbient = lighting.OutdoorAmbient
-        lighting.Brightness = 2
-        lighting.Ambient = Color3.new(1, 1, 1)
-        lighting.OutdoorAmbient = Color3.new(1, 1, 1)
-        lighting.FogEnd = 1000
-    else
-        if originalBrightness then lighting.Brightness = originalBrightness end
-        if originalAmbient then lighting.Ambient = originalAmbient end
-        if originalOutdoorAmbient then lighting.OutdoorAmbient = originalOutdoorAmbient end
-    end
-end
 
 WasUI:CreateCategory(tabRole, "移动能力")
 WasUI:CreateToggle(tabRole, false, function(state)
     speedEnabled = state
-    local char = lp.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.WalkSpeed = state and speedValue or 16 end
+    if speedEnabled then
+        if speedLoop then task.cancel(speedLoop) end
+        speedLoop = task.spawn(function()
+            while speedEnabled do
+                local char = lp.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        hum.WalkSpeed = speedValue
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        if speedLoop then task.cancel(speedLoop); speedLoop = nil end
+        local char = lp.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.WalkSpeed = 16
+            end
+        end
+    end
 end, "加速", nil, "speed_toggle")
 
 WasUI:CreateSlider(tabRole, "速度值", 16, 200, 16, function(value)
     speedValue = value
     if speedEnabled then
         local char = lp.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum then hum.WalkSpeed = value end
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.WalkSpeed = value
+            end
+        end
     end
 end, "speed_value")
 
@@ -648,11 +656,6 @@ WasUI:CreateToggle(tabRole, false, function(state)
         end
     end
 end, "穿墙", nil, "noclip_toggle")
-
-WasUI:CreateToggle(tabRole, false, function(state)
-    nightVisionEnabled = state
-    setNightVision(state)
-end, "夜视", nil, "night_vision")
 
 v3.Heartbeat:Connect(function(dt)
     if aurablade or tpplayfb or isBlinkActive then
@@ -1028,9 +1031,19 @@ end)
 
 lp.CharacterAdded:Connect(function()
     if speedEnabled then
-        local char = lp.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum then hum.WalkSpeed = speedValue end
+        if speedLoop then task.cancel(speedLoop) end
+        speedLoop = task.spawn(function()
+            while speedEnabled do
+                local char = lp.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        hum.WalkSpeed = speedValue
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
     end
     if noclipEnabled then
         if noclipLoop then task.cancel(noclipLoop) end
