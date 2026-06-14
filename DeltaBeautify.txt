@@ -273,20 +273,21 @@ local orbDragInput = nil
 orbBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         isOrbDragging = false
-        orbDragStart = input.Position
-        orbStartPos = orbFrame.AbsolutePosition + orbFrame.AbsoluteSize / 2
+        orbDragStart = Vector2.new(input.Position.X, input.Position.Y)
+        orbDragOffset = (orbFrame.AbsolutePosition + orbFrame.AbsoluteSize / 2) - orbDragStart
         orbDragInput = input
     end
 end)
 
 v2.InputChanged:Connect(function(input)
     if input == orbDragInput and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - orbDragStart
+        local pos2 = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = pos2 - orbDragStart
         if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
             isOrbDragging = true
         end
         if isOrbDragging then
-            local newPos = orbStartPos + Vector2.new(delta.X, delta.Y)
+            local newPos = pos2 + orbDragOffset
             orbFrame.Position = UDim2.new(0, newPos.X, 0, newPos.Y)
         end
     end
@@ -546,7 +547,7 @@ modalOverlay.Parent = screenGui
 local modalCard = create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0.5),
     Position = UDim2.new(0.5, 0, 0.5, 0),
-    Size = UDim2.new(0, 360, 0, 420),
+    Size = UDim2.new(0, 340, 0, 400),
     BackgroundColor3 = theme.surface,
     BackgroundTransparency = 0.05,
     BorderSizePixel = 0,
@@ -694,6 +695,274 @@ local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTrans
 cloudPage.Parent = contentFrame
 local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
 settingsPage.Parent = contentFrame
+local settingsScroll = create("ScrollingFrame", {Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(1, -24, 1, -24), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3})
+settingsScroll.Parent = settingsPage
+local settingsList = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)})
+settingsList.Parent = settingsScroll
+local settingsData = {}
+
+local function makeSettingRow(title, desc, layoutOrder)
+    local row = create("Frame", {Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, LayoutOrder = layoutOrder, ZIndex = 4})
+    corner(12, row)
+    local tLabel = create("TextLabel", {Position = UDim2.new(0, 16, 0, 8), Size = UDim2.new(0.5, 0, 0, 22), BackgroundTransparency = 1, Text = title, TextColor3 = theme.text, TextSize = 14, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5})
+    tLabel.Parent = row
+    local dLabel = create("TextLabel", {Position = UDim2.new(0, 16, 0, 30), Size = UDim2.new(0.5, 0, 0, 18), BackgroundTransparency = 1, Text = desc, TextColor3 = theme.textDim, TextSize = 11, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5})
+    dLabel.Parent = row
+    return row
+end
+
+local function makeActionButton(text, parent, callback)
+    local btn = create("TextButton", {AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 110, 0, 32), BackgroundColor3 = theme.accent, BackgroundTransparency = 0.15, Text = "", BorderSizePixel = 0, ZIndex = 5})
+    corner(8, btn)
+    local txt = create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(255,255,255), TextSize = 12, Font = Enum.Font.GothamBold, ZIndex = 6})
+    txt.Parent = btn
+    btn.Parent = parent
+    btn.MouseButton1Click:Connect(function()
+        local ok, err = pcall(callback)
+        if not ok then
+            warn("[DeltaUI] " .. tostring(err))
+        end
+    end)
+    return btn
+end
+
+local function makeToggle(parent, initialState, callback)
+    local toggleBg = create("TextButton", {AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 48, 0, 26), BackgroundColor3 = initialState and theme.accent or theme.surfaceLight, BackgroundTransparency = 0.2, BorderSizePixel = 0, Text = "", ZIndex = 5})
+    corner(13, toggleBg)
+    local knob = create("Frame", {AnchorPoint = Vector2.new(0, 0.5), Position = initialState and UDim2.new(1, -22, 0.5, 0) or UDim2.new(0, 4, 0.5, 0), Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = Color3.fromRGB(255,255,255), BorderSizePixel = 0, ZIndex = 6})
+    corner(9, knob)
+    knob.Parent = toggleBg
+    toggleBg.Parent = parent
+    local state = initialState
+    toggleBg.MouseButton1Click:Connect(function()
+        state = not state
+        v4:Create(toggleBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = state and theme.accent or theme.surfaceLight}):Play()
+        v4:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = state and UDim2.new(1, -22, 0.5, 0) or UDim2.new(0, 4, 0.5, 0)}):Play()
+        local ok, err = pcall(function() callback(state) end)
+        if not ok then
+            warn("[DeltaUI] " .. tostring(err))
+        end
+    end)
+    return toggleBg, function() return state end
+end
+
+local function makeDropdown(parent, options, defaultIndex, callback)
+    local current = options[defaultIndex] or options[1]
+    local btn = create("TextButton", {AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 120, 0, 32), BackgroundColor3 = theme.surfaceLight, BackgroundTransparency = 0.2, Text = "", BorderSizePixel = 0, ZIndex = 5})
+    corner(8, btn)
+    local txt = create("TextLabel", {Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -30, 1, 0), BackgroundTransparency = 1, Text = current, TextColor3 = theme.text, TextSize = 12, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6})
+    txt.Parent = btn
+    local arrow = GetIcon("chevron-down", UDim2.new(0, 14, 0, 14), theme.textDim)
+    if arrow then
+        arrow.Position = UDim2.new(1, -20, 0.5, -7)
+        arrow.Parent = btn
+    end
+    btn.Parent = parent
+    local dropdownOpen = false
+    local listFrame = nil
+    btn.MouseButton1Click:Connect(function()
+        if dropdownOpen and listFrame then
+            listFrame:Destroy()
+            listFrame = nil
+            dropdownOpen = false
+            return
+        end
+        dropdownOpen = true
+        listFrame = create("Frame", {Position = UDim2.new(0, 0, 0, 36), Size = UDim2.new(1, 0, 0, #options * 30), BackgroundColor3 = theme.surfaceLight, BackgroundTransparency = 0.05, BorderSizePixel = 0, ZIndex = 250})
+        corner(8, listFrame)
+        stroke(theme.border, 1, listFrame)
+        listFrame.Parent = btn
+        for i, opt in ipairs(options) do
+            local optBtn = create("TextButton", {Position = UDim2.new(0, 0, 0, (i-1)*30), Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Text = "", ZIndex = 251})
+            local optTxt = create("TextLabel", {Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -20, 1, 0), BackgroundTransparency = 1, Text = opt, TextColor3 = theme.text, TextSize = 12, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 252})
+            optTxt.Parent = optBtn
+            optBtn.Parent = listFrame
+            optBtn.MouseButton1Click:Connect(function()
+                current = opt
+                txt.Text = current
+                if listFrame then
+                    listFrame:Destroy()
+                    listFrame = nil
+                end
+                dropdownOpen = false
+                local ok, err = pcall(function() callback(current) end)
+                if not ok then
+                    warn("[DeltaUI] " .. tostring(err))
+                end
+            end)
+        end
+    end)
+    return btn, function() return current end
+end
+
+local tpService = game:GetService("TeleportService")
+local mktService = game:GetService("MarketplaceService")
+local vUser = game:GetService("VirtualUser")
+
+local row0 = makeSettingRow("Language", "Select your preferred language", 0)
+makeDropdown(row0, {"English", "ä¸­æ", "íêµ­ì´", "æ¥æ¬èª"}, 1, function(val)
+    local langMap = {["English"] = "en", ["ä¸­æ"] = "zh", ["íêµ­ì´"] = "ko", ["æ¥æ¬èª"] = "ja"}
+    settingsData.language = langMap[val] or "en"
+end)
+row0.Parent = settingsScroll
+
+local row1 = makeSettingRow("Rejoin", "Rejoins your current server", 1)
+makeActionButton("CLICK HERE", row1, function()
+    tpService:TeleportToPlaceInstance(game.PlaceId, game.JobId, v7)
+end)
+row1.Parent = settingsScroll
+
+local row2 = makeSettingRow("Small Server", "Joins a server with a low playercount", 2)
+makeActionButton("CLICK HERE", row2, function()
+    tpService:Teleport(game.PlaceId, v7)
+end)
+row2.Parent = settingsScroll
+
+local row3 = makeSettingRow("Serverhop", "Teleport to a new server", 3)
+makeActionButton("CLICK HERE", row3, function()
+    tpService:Teleport(game.PlaceId, v7)
+end)
+row3.Parent = settingsScroll
+
+local row4 = makeSettingRow("FPS Cap", "Change the FPS cap for a smoother experience", 4)
+makeDropdown(row4, {"30 FPS", "60 FPS", "120 FPS", "240 FPS", "360 FPS", "Unlimited"}, 2, function(val)
+    local cap = val == "30 FPS" and 30 or val == "60 FPS" and 60 or val == "120 FPS" and 120 or val == "240 FPS" and 240 or val == "360 FPS" and 360 or 0
+    if setfpscap then
+        setfpscap(cap)
+    end
+end)
+row4.Parent = settingsScroll
+
+local row5 = makeSettingRow("Icon Size", "Change the floating icon's size", 5)
+makeDropdown(row5, {"Small", "Medium", "Large"}, 2, function(val)
+    local sz = val == "Small" and 25 or val == "Medium" and 35 or 45
+    orbFrame.Size = UDim2.new(0, sz, 0, sz)
+end)
+row5.Parent = settingsScroll
+
+local row6 = makeSettingRow("Icon Shape", "Change the floating icon's shape", 6)
+makeDropdown(row6, {"Circle", "Square"}, 1, function(val)
+    for _, c in pairs(orbFrame:GetChildren()) do
+        if c:IsA("UICorner") then
+            c:Destroy()
+        end
+    end
+    if val == "Circle" then
+        corner(sz/2, orbFrame)
+    end
+end)
+row6.Parent = settingsScroll
+
+local row7 = makeSettingRow("Disable Robux", "Block all ROBUX purchases making it impossible to lose ROBUX to scams", 7)
+local _, getRobuxState = makeToggle(row7, false, function(state)
+    if state then
+        settingsData.robuxHook = mktService.PromptProductPurchase
+        mktService.PromptProductPurchase = function() end
+        settingsData.robuxHook2 = mktService.PromptGamePassPurchase
+        mktService.PromptGamePassPurchase = function() end
+        settingsData.robuxHook3 = mktService.PromptPremiumPurchase
+        mktService.PromptPremiumPurchase = function() end
+    else
+        if settingsData.robuxHook then
+            mktService.PromptProductPurchase = settingsData.robuxHook
+            settingsData.robuxHook = nil
+        end
+        if settingsData.robuxHook2 then
+            mktService.PromptGamePassPurchase = settingsData.robuxHook2
+            settingsData.robuxHook2 = nil
+        end
+        if settingsData.robuxHook3 then
+            mktService.PromptPremiumPurchase = settingsData.robuxHook3
+            settingsData.robuxHook3 = nil
+        end
+    end
+end)
+row7.Parent = settingsScroll
+
+local row8 = makeSettingRow("Verify Teleports", "Only allow teleports to the same place id", 8)
+local _, getVerifyState = makeToggle(row8, false, function(state)
+    if state then
+        settingsData.tpHook = tpService.Teleport
+        tpService.Teleport = function(self, placeId, player, ...)
+            if placeId ~= game.PlaceId then
+                warn("[DeltaUI] Blocked teleport to different place: " .. tostring(placeId))
+                return
+            end
+            return settingsData.tpHook(self, placeId, player, ...)
+        end
+        settingsData.tpHook2 = tpService.TeleportToPlaceInstance
+        tpService.TeleportToPlaceInstance = function(self, placeId, jobId, player, ...)
+            if placeId ~= game.PlaceId then
+                warn("[DeltaUI] Blocked teleport to different place: " .. tostring(placeId))
+                return
+            end
+            return settingsData.tpHook2(self, placeId, jobId, player, ...)
+        end
+    else
+        if settingsData.tpHook then
+            tpService.Teleport = settingsData.tpHook
+            settingsData.tpHook = nil
+        end
+        if settingsData.tpHook2 then
+            tpService.TeleportToPlaceInstance = settingsData.tpHook2
+            settingsData.tpHook2 = nil
+        end
+    end
+end)
+row8.Parent = settingsScroll
+
+local row9 = makeSettingRow("Anti AFK", "Disable all idle timeout kicks from the source", 9)
+local _, getAntiAfkState = makeToggle(row9, false, function(state)
+    if state then
+        if settingsData.afkConnection then
+            settingsData.afkConnection:Disconnect()
+        end
+        settingsData.afkConnection = v7.Idled:Connect(function()
+            vUser:CaptureController()
+            vUser:ClickButton2(Vector2.new())
+        end)
+    else
+        if settingsData.afkConnection then
+            settingsData.afkConnection:Disconnect()
+            settingsData.afkConnection = nil
+        end
+    end
+end)
+row9.Parent = settingsScroll
+
+local row10 = makeSettingRow("Console", "Toggle roblox console logs in the GUI", 10)
+local _, getConsoleState = makeToggle(row10, true, function(state)
+    consoleEnabled = state
+    if state then
+        consolePage.Visible = true
+    else
+        consolePage.Visible = false
+    end
+end)
+row10.Parent = settingsScroll
+
+local row11 = makeSettingRow("Auto Execute", "Toggle auto-execution of scripts in the autoexec folder", 11)
+local _, getAutoExecState = makeToggle(row11, false, function(state)
+    if state and isfolder("autoexec") then
+        local ok, files = pcall(listfiles, "autoexec")
+        if ok and files then
+            for _, file in ipairs(files) do
+                if file:match("%.lua$") then
+                    local ok2, content = pcall(readfile, file)
+                    if ok2 and content then
+                        local fn, err = loadstring(content)
+                        if fn then
+                            fn()
+                        else
+                            warn("[DeltaUI] Autoexec error: " .. tostring(err))
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+row11.Parent = settingsScroll
 pages["house"] = editorPage
 pages["terminal"] = consolePage
 pages["gamepad-2"] = gamepadPage
@@ -702,7 +971,12 @@ pages["settings"] = settingsPage
 local allTimeLabels = {timeLabel}
 local allPingLabels = {pingLabel}
 local allFpsLabels = {fpsLabel}
+local consoleEnabled = true
 local function AddLog(message, level)
+    if not consoleEnabled then
+        warn("error ä½ æ²¡æå¼å¯console")
+        return
+    end
     local color = theme.text
     if level == "error" then color = theme.red
     elseif level == "warn" then color = theme.warn
