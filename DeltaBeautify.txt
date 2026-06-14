@@ -10,7 +10,7 @@ local function LoadLucide()
     if LucideManager.Loaded then return LucideManager.Module end
     local content = game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
     if not content or content == "" then return nil end
-    local func = loadstring(content)
+    local func, err = loadstring(content)
     if not func then return nil end
     local module = func()
     if module then
@@ -697,12 +697,10 @@ local addScriptText = create("TextLabel", {
 addScriptText.Parent = addScriptBtn
 local saveFolder = "DeltaSavedScripts"
 local function ensureFolder()
-    local ok, _ = pcall(function()
-        if not isfolder(saveFolder) then
-            makefolder(saveFolder)
-        end
-    end)
-    return ok
+    if not isfolder(saveFolder) then
+        makefolder(saveFolder)
+    end
+    return true
 end
 local function refreshScriptList(filter)
     for _, child in pairs(scriptListScroll:GetChildren()) do
@@ -710,8 +708,8 @@ local function refreshScriptList(filter)
             child:Destroy()
         end
     end
-    local ok, files = pcall(function() return listfiles(saveFolder) end)
-    if not ok or not files then return end
+    local files = listfiles(saveFolder)
+    if not files then return end
     for _, filePath in ipairs(files) do
         local name = filePath:match("([^/\\]+)%.lua$") or filePath:match("([^/\\]+)$")
         if not name then
@@ -767,128 +765,14 @@ local function refreshScriptList(filter)
             execText2.Parent = execBtn2
             execBtn2.Parent = item
             delBtn.MouseButton1Click:Connect(function()
-                pcall(function() delfile(filePath) end)
+                delfile(filePath)
                 item:Destroy()
                 refreshScriptList(searchInput.Text)
             end)
             execBtn2.MouseButton1Click:Connect(function()
-                local ok2, code2 = pcall(function() return readfile(filePath) end)
-                if ok2 and code2 and code2 ~= "" then
-                    cleanupOldUI()
-                    AddLog("> Executing saved script: " .. name, "info")
-                    local fn2, err2 = loadstring(code2)
-                    if not fn2 then
-                        AddLog("[Error] " .. tostring(err2), "error")
-                        return
-                    end
-                    local success2, runErr2 = pcall(fn2)
-                    if not success2 then
-                        AddLog("[Error] " .. tostring(runErr2), "error")
-                    else
-                        AddLog("> Execution finished", "info")
-                    end
-                end
-            end)
-            item.Parent = scriptListScroll
-        end
-    end
-end
-updateBtn.MouseButton1Click:Connect(function()
-    modalOverlay.Visible = true
-    titleInput.Text = "Enter Your Title..."
-    scriptInput.Text = "Enter Your Script..."
-end)
-modalClose.MouseButton1Click:Connect(function()
-    modalOverlay.Visible = false
-end)
-modalOverlay.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local pos = input.Position
-        local cardPos = modalCard.AbsolutePosition
-        local cardSize = modalCard.AbsoluteSize
-        if pos.X < cardPos.X or pos.X > cardPos.X + cardSize.X or pos.Y < cardPos.Y or pos.Y > cardPos.Y + cardSize.Y then
-            modalOverlay.Visible = false
-        end
-    end
-end)
-addScriptBtn.MouseButton1Click:Connect(function()
-    local title = titleInput.Text
-    local scriptContent = scriptInput.Text
-    if title == "" or title == "Enter Your Title..." then
-        return
-    end
-    if scriptContent == "" or scriptContent == "Enter Your Script..." then
-        return
-    end
-    ensureFolder()
-    local fileName = title:gsub("[^%w%s_-]", ""):gsub("%s+", "_")
-    if fileName == "" then fileName = "untitled" end
-    pcall(function()
-        writefile(saveFolder .. "/" .. fileName .. ".lua", scriptContent)
-    end)
-    modalOverlay.Visible = false
-    refreshScriptList(searchInput.Text)
-end)
-searchInput:GetPropertyChangedSignal("Text"):Connect(function()
-    refreshScriptList(searchInput.Text)
-end)
-task.spawn(function()
-    task.wait(0.5)
-    refreshScriptList("")
-end)
-local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
-cloudPage.Parent = contentFrame
-local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
-settingsPage.Parent = contentFrame
-pages.house = editorPage
-pages.terminal = consolePage
-pages["gamepad-2"] = gamepadPage
-pages.cloud = cloudPage
-pages.settings = settingsPage
-local allPingLabels = {pingLabel}
-local allFpsLabels = {fpsLabel}
-local allTimeLabels = {timeLabel}
-local function AddLog(msg, msgType)
-    local color = theme.text
-    if msgType == "error" then color = theme.red
-    elseif msgType == "warn" then color = theme.warn end
-    local logLabel = create("TextLabel", {Size = UDim2.new(1, -12, 0, 18), BackgroundTransparency = 1, Text = tostring(msg), TextColor3 = color, TextSize = 12, Font = Enum.Font.Code, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y, ZIndex = 12})
-    logLabel.Parent = consoleScroll
-end
-local oldPrint = print
-local oldWarn = warn
-local oldError = error
-print = function(...)
-    local args = {...}
-    local str = ""
-    for i, v in ipairs(args) do
-        str = str .. tostring(v)
-        if i < #args then str = str .. "  " end
-    end
-    AddLog(str, "info")
-    return oldPrint(...)
-end
-warn = function(...)
-    local args = {...}
-    local str = ""
-    for i, v in ipairs(args) do
-        str = str .. tostring(v)
-        if i < #args then str = str .. "  " end
-    end
-    AddLog(str, "warn")
-    return oldWarn(...)
-end
-error = function(...)
-    local args = {...}
-    local str = ""
-    for i, v in ipairs(args) do
-        str = str .. tostring(v)
-        if i < #args then str = str .. "  " end
-    end
-    AddLog(str, "error")
-    return oldError(...)
-end
-local function cleanupOldUI()
+                local code2 = readfile(filePath)
+                if code2 and code2 ~= "" then
+                    local function cleanupOldUI()
     for _, child in pairs(v3:GetChildren()) do
         if #child.Name > 20 then
             for _, d in pairs(child:GetDescendants()) do
@@ -966,12 +850,8 @@ execBtn.MouseButton1Click:Connect(function()
             AddLog("[Error] " .. tostring(compileErr), "error")
             return
         end
-        local success, runErr = pcall(fn)
-        if not success then
-            AddLog("[Error] " .. tostring(runErr), "error")
-        else
-            AddLog("> Execution finished", "info")
-        end
+        fn()
+        AddLog("> Execution finished", "info")
     end
 end)
 clearBtn.MouseButton1Click:Connect(function()
@@ -980,8 +860,8 @@ clearBtn.MouseButton1Click:Connect(function()
     AddLog("> Editor cleared", "info")
 end)
 pasteBtn.MouseButton1Click:Connect(function()
-    local ok, result = pcall(getclipboard)
-    if ok and result then
+    local result = getclipboard()
+    if result then
         codeBox.Text = result
         updateLineNumbers()
         AddLog("> Pasted from clipboard", "info")
@@ -989,20 +869,16 @@ pasteBtn.MouseButton1Click:Connect(function()
 end)
 execClipBtn.MouseButton1Click:Connect(function()
     cleanupOldUI()
-    local ok, result = pcall(getclipboard)
-    if ok and result and result ~= "" then
+    local result = getclipboard()
+    if result and result ~= "" then
         AddLog("> Executing clipboard...", "info")
         local fn, compileErr = loadstring(result)
         if not fn then
             AddLog("[Error] " .. tostring(compileErr), "error")
             return
         end
-        local success, runErr = pcall(fn)
-        if not success then
-            AddLog("[Error] " .. tostring(runErr), "error")
-        else
-            AddLog("> Clipboard execution finished", "info")
-        end
+        fn()
+        AddLog("> Clipboard execution finished", "info")
     end
 end)
 v2.InputBegan:Connect(function(input, gpe)
@@ -1012,7 +888,6 @@ v2.InputBegan:Connect(function(input, gpe)
 end)
 AddLog("Delta UI Core loaded", "info")
 AddLog("Ready", "info")
-pcall(function()
     local recentErrors = {}
     game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
         local msg = tostring(message)
@@ -1023,5 +898,119 @@ pcall(function()
         end
         recentErrors[msg] = {time = now, count = 1}
         AddLog("[Server] " .. msg, "error")
-    end)
+
+
 end)
+
+end)
+if not _deltaUI_ok then
+    warn("[DeltaUI] è´å½éè¯¯: " .. tostring(_deltaUI_err))
+en
+cleanupOldUI()
+                    AddLog("> Executing saved script: " .. name, "info")
+                    local fn2, err2 = loadstring(code2)
+                    if not fn2 then
+                        AddLog("[Error] " .. tostring(err2), "error")
+                        return
+                    end
+                    fn2()
+                    AddLog("> Execution finished", "info")
+                end
+            end)
+            item.Parent = scriptListScroll
+        end
+    end
+end
+updateBtn.MouseButton1Click:Connect(function()
+    modalOverlay.Visible = true
+    titleInput.Text = "Enter Your Title..."
+    scriptInput.Text = "Enter Your Script..."
+end)
+modalClose.MouseButton1Click:Connect(function()
+    modalOverlay.Visible = false
+end)
+modalOverlay.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local pos = input.Position
+        local cardPos = modalCard.AbsolutePosition
+        local cardSize = modalCard.AbsoluteSize
+        if pos.X < cardPos.X or pos.X > cardPos.X + cardSize.X or pos.Y < cardPos.Y or pos.Y > cardPos.Y + cardSize.Y then
+            modalOverlay.Visible = false
+        end
+    end
+end)
+addScriptBtn.MouseButton1Click:Connect(function()
+    local title = titleInput.Text
+    local scriptContent = scriptInput.Text
+    if title == "" or title == "Enter Your Title..." then
+        return
+    end
+    if scriptContent == "" or scriptContent == "Enter Your Script..." then
+        return
+    end
+    ensureFolder()
+    local fileName = title:gsub("[^%w%s_-]", ""):gsub("%s+", "_")
+    if fileName == "" then fileName = "untitled" end
+    writefile(saveFolder .. "/" .. fileName .. ".lua", scriptContent)
+    modalOverlay.Visible = false
+    refreshScriptList(searchInput.Text)
+end)
+searchInput:GetPropertyChangedSignal("Text"):Connect(function()
+    refreshScriptList(searchInput.Text)
+end)
+task.spawn(function()
+    task.wait(0.5)
+    refreshScriptList("")
+end)
+local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+cloudPage.Parent = contentFrame
+local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+settingsPage.Parent = contentFrame
+pages.house = editorPage
+pages.terminal = consolePage
+pages["gamepad-2"] = gamepadPage
+pages.cloud = cloudPage
+pages.settings = settingsPage
+local allPingLabels = {pingLabel}
+local allFpsLabels = {fpsLabel}
+local allTimeLabels = {timeLabel}
+local function AddLog(msg, msgType)
+    local color = theme.text
+    if msgType == "error" then color = theme.red
+    elseif msgType == "warn" then color = theme.warn end
+    local logLabel = create("TextLabel", {Size = UDim2.new(1, -12, 0, 18), BackgroundTransparency = 1, Text = tostring(msg), TextColor3 = color, TextSize = 12, Font = Enum.Font.Code, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y, ZIndex = 12})
+    logLabel.Parent = consoleScroll
+end
+local oldPrint = print
+local oldWarn = warn
+local oldError = error
+print = function(...)
+    local args = {...}
+    local str = ""
+    for i, v in ipairs(args) do
+        str = str .. tostring(v)
+        if i < #args then str = str .. "  " end
+    end
+    AddLog(str, "info")
+    return oldPrint(...)
+end
+warn = function(...)
+    local args = {...}
+    local str = ""
+    for i, v in ipairs(args) do
+        str = str .. tostring(v)
+        if i < #args then str = str .. "  " end
+    end
+    AddLog(str, "warn")
+    return oldWarn(...)
+end
+error = function(...)
+    local args = {...}
+    local str = ""
+    for i, v in ipairs(args) do
+        str = str .. tostring(v)
+        if i < #args then str = str .. "  " end
+    end
+    AddLog(str, "error")
+    return oldError(...)
+end
