@@ -74,7 +74,7 @@ local main = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparen
 main.Parent = screenGui
 local topBar = create("Frame", {Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 10})
 topBar.Parent = main
-local local navBg = create("Frame", {
+local navBg = create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0.5),
     Position = UDim2.new(0.5, 24, 0.5, 1),
     Size = UDim2.new(0, 200, 0, 38),
@@ -85,7 +85,6 @@ local local navBg = create("Frame", {
 })
 corner(20, navBg)
 navBg.Parent = topBar
-
 local logoutBtn = create("TextButton", {
     AnchorPoint = Vector2.new(0.5, 0.5),
     Position = UDim2.new(0.5, -112, 0.5, 1),
@@ -244,7 +243,6 @@ rightToggleBar.MouseButton1Click:Connect(function()
         v4:Create(wrapperFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -56, 1, -60)}):Play()
     end
 end)
-
 local orbFrame = create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0.5),
     Position = UDim2.new(0.5, 0, 0.35, 0),
@@ -259,7 +257,6 @@ corner(17, orbFrame)
 local orbStroke = create("UIStroke", {Color = theme.accent, Thickness = 1.5, Transparency = 0})
 orbStroke.Parent = orbFrame
 orbFrame.Parent = screenGui
-
 local orbBtn = create("TextButton", {
     Size = UDim2.new(1, 0, 1, 0),
     BackgroundTransparency = 1,
@@ -268,42 +265,41 @@ local orbBtn = create("TextButton", {
     ZIndex = 101
 })
 orbBtn.Parent = orbFrame
+local isOrbDragging = false
+local orbDragStart = nil
+local orbStartPos = nil
+local orbDragInput = nil
 
-local isDragging = false
-local dragStart = nil
-local startPos = nil
-
-local dragConnection = nil
 orbBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isDragging = false
-        dragStart = input.Position
-        startPos = orbFrame.Position
-        if dragConnection then dragConnection:Disconnect() end
-        dragConnection = v5.RenderStepped:Connect(function()
-            if not dragStart then return end
-            local mousePos = v2:GetMouseLocation()
-            local delta = mousePos - Vector2.new(dragStart.X, dragStart.Y)
-            if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
-                isDragging = true
-            end
-            orbFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end)
+        isOrbDragging = false
+        orbDragStart = input.Position
+        orbStartPos = orbFrame.AbsolutePosition + orbFrame.AbsoluteSize / 2
+        orbDragInput = input
     end
 end)
 
-orbBtn.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        if dragConnection then
-            dragConnection:Disconnect()
-            dragConnection = nil
+v2.InputChanged:Connect(function(input)
+    if input == orbDragInput and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - orbDragStart
+        if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+            isOrbDragging = true
         end
-        dragStart = nil
-        if not isDragging then
+        if isOrbDragging then
+            local newPos = orbStartPos + Vector2.new(delta.X, delta.Y)
+            orbFrame.Position = UDim2.new(0, newPos.X, 0, newPos.Y)
+        end
+    end
+end)
+
+v2.InputEnded:Connect(function(input)
+    if input == orbDragInput then
+        orbDragInput = nil
+        if not isOrbDragging then
             main.Visible = true
             orbFrame.Visible = false
         end
-        isDragging = false
+        isOrbDragging = false
     end
 end)
 
@@ -311,7 +307,6 @@ logoutBtn.MouseButton1Click:Connect(function()
     main.Visible = false
     orbFrame.Visible = true
 end)
-
 orbBtn.MouseButton1Click:Connect(function()
     main.Visible = true
     orbFrame.Visible = false
@@ -695,6 +690,38 @@ local addScriptText = create("TextLabel", {
     ZIndex = 203
 })
 addScriptText.Parent = addScriptBtn
+local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+cloudPage.Parent = contentFrame
+local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+settingsPage.Parent = contentFrame
+pages["house"] = editorPage
+pages["terminal"] = consolePage
+pages["gamepad-2"] = gamepadPage
+pages["cloud"] = cloudPage
+pages["settings"] = settingsPage
+local allTimeLabels = {timeLabel}
+local allPingLabels = {pingLabel}
+local allFpsLabels = {fpsLabel}
+local function AddLog(message, level)
+    local color = theme.text
+    if level == "error" then color = theme.red
+    elseif level == "warn" then color = theme.warn
+    elseif level == "info" then color = theme.textDim end
+    local entry = create("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 18),
+        BackgroundTransparency = 1,
+        Text = tostring(message),
+        TextColor3 = color,
+        TextSize = 11,
+        Font = Enum.Font.Code,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        ZIndex = 4
+    })
+    entry.Parent = consoleScroll
+    task.wait()
+    consoleScroll.CanvasPosition = Vector2.new(0, consoleScroll.AbsoluteCanvasSize.Y)
+end
 local saveFolder = "DeltaSavedScripts"
 local function ensureFolder()
     if not isfolder(saveFolder) then
@@ -702,14 +729,34 @@ local function ensureFolder()
     end
     return true
 end
+local function cleanupOldUI()
+    for _, child in pairs(v3:GetChildren()) do
+        if #child.Name > 20 then
+            local ok, target = pcall(function()
+                for _, d in pairs(child:GetDescendants()) do
+                    if d.Name == "Executor" then
+                        return d.Parent
+                    end
+                end
+                return nil
+            end)
+            if ok and target then
+                pcall(function()
+                    target:Destroy()
+                end)
+            end
+        end
+    end
+end
 local function refreshScriptList(filter)
     for _, child in pairs(scriptListScroll:GetChildren()) do
         if child:IsA("Frame") then
             child:Destroy()
         end
     end
-    local files = listfiles(saveFolder)
-    if not files then return end
+    ensureFolder()
+    local ok, files = pcall(listfiles, saveFolder)
+    if not ok or not files then return end
     for _, filePath in ipairs(files) do
         local name = filePath:match("([^/\\]+)%.lua$") or filePath:match("([^/\\]+)$")
         if not name then
@@ -772,19 +819,62 @@ local function refreshScriptList(filter)
             execBtn2.MouseButton1Click:Connect(function()
                 local code2 = readfile(filePath)
                 if code2 and code2 ~= "" then
-                    local function cleanupOldUI()
-    for _, child in pairs(v3:GetChildren()) do
-        if #child.Name > 20 then
-            for _, d in pairs(child:GetDescendants()) do
-                if d.Name == "Executor" then
-                    child:Destroy()
-                    break
+                    cleanupOldUI()
+                    AddLog("> Executing saved script: " .. name, "info")
+                    local fn2, err2 = loadstring(code2)
+                    if not fn2 then
+                        AddLog("[Error] " .. tostring(err2), "error")
+                        return
+                    end
+                    fn2()
+                    AddLog("> Execution finished", "info")
                 end
-            end
+            end)
+            item.Parent = scriptListScroll
         end
     end
 end
-cleanupOldUI()
+updateBtn.MouseButton1Click:Connect(function()
+    modalOverlay.Visible = true
+    titleInput.Text = "Enter Your Title..."
+    scriptInput.Text = "Enter Your Script..."
+end)
+modalClose.MouseButton1Click:Connect(function()
+    modalOverlay.Visible = false
+end)
+modalOverlay.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local pos = input.Position
+        local cardPos = modalCard.AbsolutePosition
+        local cardSize = modalCard.AbsoluteSize
+        if pos.X < cardPos.X or pos.X > cardPos.X + cardSize.X or pos.Y < cardPos.Y or pos.Y > cardPos.Y + cardSize.Y then
+            modalOverlay.Visible = false
+        end
+    end
+end)
+addScriptBtn.MouseButton1Click:Connect(function()
+    local title = titleInput.Text
+    local scriptContent = scriptInput.Text
+    if title == "" or title == "Enter Your Title..." then
+        return
+    end
+    if scriptContent == "" or scriptContent == "Enter Your Script..." then
+        return
+    end
+    ensureFolder()
+    local fileName = title:gsub("[^%w%s_-]", ""):gsub("%s+", "_")
+    if fileName == "" then fileName = "untitled" end
+    writefile(saveFolder .. "/" .. fileName .. ".lua", scriptContent)
+    modalOverlay.Visible = false
+    refreshScriptList(searchInput.Text)
+end)
+searchInput:GetPropertyChangedSignal("Text"):Connect(function()
+    refreshScriptList(searchInput.Text)
+end)
+task.spawn(function()
+    task.wait(0.5)
+    refreshScriptList("")
+end)
 local function switchPage(pageName)
     if pageName == currentPage then return end
     currentPage = pageName
@@ -888,129 +978,14 @@ v2.InputBegan:Connect(function(input, gpe)
 end)
 AddLog("Delta UI Core loaded", "info")
 AddLog("Ready", "info")
-    local recentErrors = {}
-    game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
-        local msg = tostring(message)
-        local now = tick()
-        if recentErrors[msg] and (now - recentErrors[msg].time) < 3 then
-            recentErrors[msg].count = recentErrors[msg].count + 1
-            return
-        end
-        recentErrors[msg] = {time = now, count = 1}
-        AddLog("[Server] " .. msg, "error")
-
-
-end)
-
-end)
-if not _deltaUI_ok then
-    warn("[DeltaUI] è´å½éè¯¯: " .. tostring(_deltaUI_err))
-en
-cleanupOldUI()
-                    AddLog("> Executing saved script: " .. name, "info")
-                    local fn2, err2 = loadstring(code2)
-                    if not fn2 then
-                        AddLog("[Error] " .. tostring(err2), "error")
-                        return
-                    end
-                    fn2()
-                    AddLog("> Execution finished", "info")
-                end
-            end)
-            item.Parent = scriptListScroll
-        end
-    end
-end
-updateBtn.MouseButton1Click:Connect(function()
-    modalOverlay.Visible = true
-    titleInput.Text = "Enter Your Title..."
-    scriptInput.Text = "Enter Your Script..."
-end)
-modalClose.MouseButton1Click:Connect(function()
-    modalOverlay.Visible = false
-end)
-modalOverlay.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local pos = input.Position
-        local cardPos = modalCard.AbsolutePosition
-        local cardSize = modalCard.AbsoluteSize
-        if pos.X < cardPos.X or pos.X > cardPos.X + cardSize.X or pos.Y < cardPos.Y or pos.Y > cardPos.Y + cardSize.Y then
-            modalOverlay.Visible = false
-        end
-    end
-end)
-addScriptBtn.MouseButton1Click:Connect(function()
-    local title = titleInput.Text
-    local scriptContent = scriptInput.Text
-    if title == "" or title == "Enter Your Title..." then
+local recentErrors = {}
+game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
+    local msg = tostring(message)
+    local now = tick()
+    if recentErrors[msg] and (now - recentErrors[msg].time) < 3 then
+        recentErrors[msg].count = recentErrors[msg].count + 1
         return
     end
-    if scriptContent == "" or scriptContent == "Enter Your Script..." then
-        return
-    end
-    ensureFolder()
-    local fileName = title:gsub("[^%w%s_-]", ""):gsub("%s+", "_")
-    if fileName == "" then fileName = "untitled" end
-    writefile(saveFolder .. "/" .. fileName .. ".lua", scriptContent)
-    modalOverlay.Visible = false
-    refreshScriptList(searchInput.Text)
+    recentErrors[msg] = {time = now, count = 1}
+    AddLog("[Server] " .. msg, "error")
 end)
-searchInput:GetPropertyChangedSignal("Text"):Connect(function()
-    refreshScriptList(searchInput.Text)
-end)
-task.spawn(function()
-    task.wait(0.5)
-    refreshScriptList("")
-end)
-local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
-cloudPage.Parent = contentFrame
-local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
-settingsPage.Parent = contentFrame
-pages.house = editorPage
-pages.terminal = consolePage
-pages["gamepad-2"] = gamepadPage
-pages.cloud = cloudPage
-pages.settings = settingsPage
-local allPingLabels = {pingLabel}
-local allFpsLabels = {fpsLabel}
-local allTimeLabels = {timeLabel}
-local function AddLog(msg, msgType)
-    local color = theme.text
-    if msgType == "error" then color = theme.red
-    elseif msgType == "warn" then color = theme.warn end
-    local logLabel = create("TextLabel", {Size = UDim2.new(1, -12, 0, 18), BackgroundTransparency = 1, Text = tostring(msg), TextColor3 = color, TextSize = 12, Font = Enum.Font.Code, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y, ZIndex = 12})
-    logLabel.Parent = consoleScroll
-end
-local oldPrint = print
-local oldWarn = warn
-local oldError = error
-print = function(...)
-    local args = {...}
-    local str = ""
-    for i, v in ipairs(args) do
-        str = str .. tostring(v)
-        if i < #args then str = str .. "  " end
-    end
-    AddLog(str, "info")
-    return oldPrint(...)
-end
-warn = function(...)
-    local args = {...}
-    local str = ""
-    for i, v in ipairs(args) do
-        str = str .. tostring(v)
-        if i < #args then str = str .. "  " end
-    end
-    AddLog(str, "warn")
-    return oldWarn(...)
-end
-error = function(...)
-    local args = {...}
-    local str = ""
-    for i, v in ipairs(args) do
-        str = str .. tostring(v)
-        if i < #args then str = str .. "  " end
-    end
-    AddLog(str, "error")
-    return oldError(...)
-end
