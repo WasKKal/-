@@ -1,0 +1,1027 @@
+local v1 = game:GetService("Players")
+local v2 = game:GetService("UserInputService")
+local v3 = game:GetService("CoreGui")
+local v4 = game:GetService("TweenService")
+local v5 = game:GetService("RunService")
+local v6 = game:GetService("Stats")
+local v7 = v1.LocalPlayer
+local LucideManager = {Module = nil, Loaded = false}
+local function LoadLucide()
+    if LucideManager.Loaded then return LucideManager.Module end
+    local content = game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
+    if not content or content == "" then return nil end
+    local func = loadstring(content)
+    if not func then return nil end
+    local module = func()
+    if module then
+        LucideManager.Module = module
+        LucideManager.Loaded = true
+        return module
+    end
+    return nil
+end
+local function GetIcon(iconName, size, color)
+    local lucide = LoadLucide()
+    if not lucide then return nil end
+    local icon = lucide.GetAsset(iconName)
+    if not icon then return nil end
+    local img = Instance.new("ImageLabel")
+    img.Image = icon.Url
+    img.Size = size or UDim2.new(0, 20, 0, 20)
+    img.BackgroundTransparency = 1
+    img.ImageColor3 = color or Color3.fromRGB(230, 232, 240)
+    img.ScaleType = Enum.ScaleType.Fit
+    if icon.ImageRectOffset then
+        img.ImageRectOffset = icon.ImageRectOffset
+        img.ImageRectSize = icon.ImageRectSize
+    end
+    return img
+end
+local function create(class, props)
+    local inst = Instance.new(class)
+    for k, v in pairs(props or {}) do inst[k] = v end
+    return inst
+end
+local function corner(radius, parent)
+    local c = create("UICorner", {CornerRadius = UDim.new(0, radius or 8)})
+    c.Parent = parent
+    return c
+end
+local function stroke(color, thickness, parent)
+    local s = create("UIStroke", {Color = color or Color3.fromRGB(60, 65, 80), Thickness = thickness or 1, Transparency = 0.4})
+    s.Parent = parent
+    return s
+end
+local theme = {
+    bg = Color3.fromRGB(20, 24, 32),
+    surface = Color3.fromRGB(30, 34, 44),
+    surfaceLight = Color3.fromRGB(45, 50, 60),
+    accent = Color3.fromRGB(59, 130, 246),
+    text = Color3.fromRGB(230, 232, 240),
+    textDim = Color3.fromRGB(140, 150, 170),
+    border = Color3.fromRGB(50, 55, 70),
+    red = Color3.fromRGB(239, 68, 68),
+    warn = Color3.fromRGB(250, 200, 80)
+}
+local oldGui = v3:FindFirstChild("DeltaUI_Core")
+if oldGui then
+    oldGui:Destroy()
+    task.wait(0.05)
+end
+local screenGui = create("ScreenGui", {Name = "DeltaUI_Core", ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, IgnoreGuiInset = true, DisplayOrder = 10000})
+screenGui.Parent = v3
+local main = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Visible = true, ZIndex = 1})
+main.Parent = screenGui
+local topBar = create("Frame", {Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 10})
+topBar.Parent = main
+local local navBg = create("Frame", {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, 24, 0.5, 1),
+    Size = UDim2.new(0, 200, 0, 38),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.1,
+    BorderSizePixel = 0,
+    ZIndex = 11
+})
+corner(20, navBg)
+navBg.Parent = topBar
+
+local logoutBtn = create("TextButton", {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, -112, 0.5, 1),
+    Size = UDim2.new(0, 36, 0, 36),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.1,
+    BorderSizePixel = 0,
+    Text = "",
+    ZIndex = 11
+})
+corner(20, logoutBtn)
+logoutBtn.Parent = topBar
+local logoutIcon = GetIcon("log-out", UDim2.new(0, 18, 0, 18), theme.text)
+if logoutIcon then
+    logoutIcon.Position = UDim2.new(0.5, -8, 0.5, -9)
+    logoutIcon.Parent = logoutBtn
+end
+local navContainer = create("Frame", {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    ZIndex = 12
+})
+navContainer.Parent = navBg
+local navNames = {"house", "terminal", "gamepad-2", "cloud", "settings"}
+local navButtons = {}
+local btnXPositions = {4, 44, 84, 124, 164}
+for i, name in ipairs(navNames) do
+    local btn = create("TextButton", {
+        Size = UDim2.new(0, 32, 0, 32),
+        Position = UDim2.new(0, btnXPositions[i], 0, 4),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Text = "",
+        ZIndex = 15
+    })
+    local icon = GetIcon(name, UDim2.new(0, 18, 0, 18))
+    if icon then
+        icon.Position = UDim2.new(0.5, -9, 0.5, -9)
+        icon.Parent = btn
+    end
+    btn.Parent = navContainer
+    navButtons[name] = btn
+end
+local navIndicator = create("Frame", {
+    Size = UDim2.new(0, 32, 0, 32),
+    BackgroundColor3 = theme.accent,
+    BackgroundTransparency = 0.1,
+    BorderSizePixel = 0,
+    ZIndex = 10
+})
+corner(16, navIndicator)
+navIndicator.Parent = navBg
+local function getIndicatorCenterPos(btn)
+    local btnPos = btn.Position
+    local btnSize = btn.Size
+    local indSize = navIndicator.Size
+    local offsetX = (btnSize.X.Offset - indSize.X.Offset) / 2
+    local offsetY = (btnSize.Y.Offset - indSize.Y.Offset) / 2
+    return UDim2.new(btnPos.X.Scale, btnPos.X.Offset + offsetX, btnPos.Y.Scale, btnPos.Y.Offset + offsetY)
+end
+navIndicator.Position = getIndicatorCenterPos(navButtons[navNames[1]])
+local function animateIndicator(targetBtn)
+    local targetPos = getIndicatorCenterPos(targetBtn)
+    v4:Create(navIndicator, TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+end
+local wrapperFrame = create("Frame", {
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, -44, 0, 48),
+    Size = UDim2.new(1, -56, 1, -60),
+    BackgroundTransparency = 1,
+    ClipsDescendants = true,
+    ZIndex = 2
+})
+wrapperFrame.Parent = main
+local statsRow = create("Frame", {
+    Size = UDim2.new(1, 0, 0, 26),
+    BackgroundTransparency = 1,
+    ZIndex = 5
+})
+statsRow.Parent = wrapperFrame
+local function makeStatPill(text, iconName)
+    local pill = create("Frame", {Size = UDim2.new(0, 60, 0, 22), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, ZIndex = 6})
+    corner(11, pill)
+    local icon = GetIcon(iconName, UDim2.new(0, 10, 0, 10), theme.textDim)
+    if icon then
+        icon.Position = UDim2.new(0, 5, 0.5, -5)
+        icon.Parent = pill
+    end
+    local label = create("TextLabel", {Position = UDim2.new(0, 18, 0, 0), Size = UDim2.new(1, -20, 1, 0), BackgroundTransparency = 1, Text = text, TextColor3 = theme.text, TextSize = 10, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 7})
+    label.Parent = pill
+    return pill, label
+end
+local leftStats = create("Frame", {Size = UDim2.new(0.5, 0, 1, 0), BackgroundTransparency = 1, ZIndex = 5})
+leftStats.Parent = statsRow
+local leftStatsLayout = create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6)})
+leftStatsLayout.Parent = leftStats
+local pingPill, pingLabel = makeStatPill("34 ms", "wifi")
+pingPill.Parent = leftStats
+local fpsPill, fpsLabel = makeStatPill("59 FPS", "zap")
+fpsPill.Parent = leftStats
+local rightStats = create("Frame", {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -1, 0, 0), Size = UDim2.new(0.5, 0, 1, 0), BackgroundTransparency = 1, ZIndex = 5})
+rightStats.Parent = statsRow
+local rightStatsLayout = create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6)})
+rightStatsLayout.Parent = rightStats
+local timePill = create("Frame", {Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, ZIndex = 6})
+corner(11, timePill)
+local timeIcon = GetIcon("clock", UDim2.new(0, 10, 0, 10), theme.textDim)
+if timeIcon then timeIcon.Position = UDim2.new(0, 5, 0.5, -5); timeIcon.Parent = timePill end
+local timeLabel = create("TextLabel", {Position = UDim2.new(0, 18, 0, 0), Size = UDim2.new(1, -20, 1, 0), BackgroundTransparency = 1, Text = "12:00 PM", TextColor3 = theme.text, TextSize = 10, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 7})
+timeLabel.Parent = timePill
+timePill.Parent = rightStats
+local labelPill = create("Frame", {Size = UDim2.new(0, 55, 0, 22), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, ZIndex = 6})
+corner(11, labelPill)
+local labelIcon = GetIcon("tag", UDim2.new(0, 10, 0, 10), theme.textDim)
+if labelIcon then labelIcon.Position = UDim2.new(0, 5, 0.5, -5); labelIcon.Parent = labelPill end
+local labelText = create("TextLabel", {Position = UDim2.new(0, 18, 0, 0), Size = UDim2.new(1, -20, 1, 0), BackgroundTransparency = 1, Text = "Label", TextColor3 = theme.text, TextSize = 10, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 7})
+labelText.Parent = labelPill
+labelPill.Parent = rightStats
+local contentFrame = create("Frame", {
+    Position = UDim2.new(0, 0, 0, 30),
+    Size = UDim2.new(1, -4, 1, -30),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.1,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+    ZIndex = 2
+})
+corner(12, contentFrame)
+contentFrame.Parent = wrapperFrame
+local rightToggleBar = create("TextButton", {
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, -9, 0, 78),
+    Size = UDim2.new(0, 36, 1, -90),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.15,
+    BorderSizePixel = 0,
+    Text = "",
+    AutoButtonColor = false,
+    ZIndex = 100
+})
+corner(10, rightToggleBar)
+rightToggleBar.Parent = main
+local toggleIcon = GetIcon("chevron-right", UDim2.new(0, 18, 0, 18), theme.textDim)
+if toggleIcon then
+    toggleIcon.Position = UDim2.new(0.5, -9, 0.5, -9)
+    toggleIcon.Parent = rightToggleBar
+end
+local isCollapsed = false
+rightToggleBar.MouseButton1Click:Connect(function()
+    isCollapsed = not isCollapsed
+    if isCollapsed then
+        if toggleIcon then v4:Create(toggleIcon, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = 180}):Play() end
+        v4:Create(wrapperFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 0, 1, -60)}):Play()
+    else
+        if toggleIcon then v4:Create(toggleIcon, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = 0}):Play() end
+        v4:Create(wrapperFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -56, 1, -60)}):Play()
+    end
+end)
+
+local orbFrame = create("Frame", {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, 0, 0.35, 0),
+    Size = UDim2.new(0, 35, 0, 35),
+    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+    BackgroundTransparency = 0,
+    BorderSizePixel = 0,
+    Visible = false,
+    ZIndex = 100
+})
+corner(17, orbFrame)
+local orbStroke = create("UIStroke", {Color = theme.accent, Thickness = 1.5, Transparency = 0})
+orbStroke.Parent = orbFrame
+orbFrame.Parent = screenGui
+
+local orbBtn = create("TextButton", {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Text = "",
+    ZIndex = 101
+})
+orbBtn.Parent = orbFrame
+
+local isDragging = false
+local dragStart = nil
+local startPos = nil
+
+local dragConnection = nil
+orbBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDragging = false
+        dragStart = input.Position
+        startPos = orbFrame.Position
+        if dragConnection then dragConnection:Disconnect() end
+        dragConnection = v5.RenderStepped:Connect(function()
+            if not dragStart then return end
+            local mousePos = v2:GetMouseLocation()
+            local delta = mousePos - Vector2.new(dragStart.X, dragStart.Y)
+            if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+                isDragging = true
+            end
+            orbFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end)
+    end
+end)
+
+orbBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if dragConnection then
+            dragConnection:Disconnect()
+            dragConnection = nil
+        end
+        dragStart = nil
+        if not isDragging then
+            main.Visible = true
+            orbFrame.Visible = false
+        end
+        isDragging = false
+    end
+end)
+
+logoutBtn.MouseButton1Click:Connect(function()
+    main.Visible = false
+    orbFrame.Visible = true
+end)
+
+orbBtn.MouseButton1Click:Connect(function()
+    main.Visible = true
+    orbFrame.Visible = false
+end)
+local pages = {}
+local currentPage = "house"
+local editorPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = true, ZIndex = 2})
+editorPage.Parent = contentFrame
+local tabPill = create("TextButton", {
+    Position = UDim2.new(0, 12, 0, 8),
+    Size = UDim2.new(0, 110, 0, 26),
+    BackgroundColor3 = theme.accent,
+    BackgroundTransparency = 0.15,
+    Text = "",
+    BorderSizePixel = 0,
+    ZIndex = 5
+})
+corner(8, tabPill)
+tabPill.Parent = editorPage
+local tabIcon = GetIcon("lock", UDim2.new(0, 11, 0, 11), Color3.fromRGB(255,255,255))
+if tabIcon then
+    tabIcon.Position = UDim2.new(0, 8, 0.5, -5)
+    tabIcon.Parent = tabPill
+end
+local tabText = create("TextLabel", {Position = UDim2.new(0, 24, 0, 0), Size = UDim2.new(0, 55, 1, 0), BackgroundTransparency = 1, Text = "New tab", TextColor3 = Color3.fromRGB(255,255,255), TextSize = 12, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6})
+tabText.Parent = tabPill
+local tabCloseBtn = create("TextButton", {Position = UDim2.new(1, -20, 0.5, -7), Size = UDim2.new(0, 14, 0, 14), BackgroundTransparency = 1, Text = "", ZIndex = 7})
+tabCloseBtn.Parent = tabPill
+local tabCloseIcon = GetIcon("x", UDim2.new(0, 10, 0, 10), Color3.fromRGB(255,255,255))
+if tabCloseIcon then
+    tabCloseIcon.Position = UDim2.new(0.5, -5, 0.5, -5)
+    tabCloseIcon.Parent = tabCloseBtn
+end
+local lineNumberFrame = create("Frame", {
+    Position = UDim2.new(0, 0, 0, 40),
+    Size = UDim2.new(0, 36, 1, -84),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.35,
+    BorderSizePixel = 0,
+    ZIndex = 3
+})
+corner(8, lineNumberFrame)
+lineNumberFrame.Parent = editorPage
+local lineNumberLabel = create("TextLabel", {Size = UDim2.new(1, -6, 1, -8), Position = UDim2.new(0, 3, 0, 4), BackgroundTransparency = 1, Text = "1", TextColor3 = theme.textDim, TextSize = 12, Font = Enum.Font.Code, TextXAlignment = Enum.TextXAlignment.Right, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 4})
+lineNumberLabel.Parent = lineNumberFrame
+local codeBox = create("TextBox", {
+    Position = UDim2.new(0, 40, 0, 40),
+    Size = UDim2.new(1, -48, 1, -84),
+    BackgroundTransparency = 1,
+    Text = "--[[\n    Thank you for using Delta <3\n    Get Delta only at deltaexploits.gg!\n    TELEGRAM: t.me/deltadyn\n    DISCORD: discord.gg/deltax\n    ONLY deltaexploits.gg IS REAL!\n]]",
+    TextColor3 = theme.text,
+    TextSize = 12,
+    Font = Enum.Font.Code,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    ClearTextOnFocus = false,
+    MultiLine = true,
+    TextWrapped = true,
+    ReturnKeyType = Enum.ReturnKeyType.Default,
+    ZIndex = 4
+})
+codeBox.Parent = editorPage
+local editOverlay = create("TextButton", {
+    Position = UDim2.new(0, 40, 0, 40),
+    Size = UDim2.new(1, -48, 1, -84),
+    BackgroundTransparency = 1,
+    Text = "",
+    ZIndex = 8
+})
+editOverlay.Parent = editorPage
+editOverlay.MouseButton1Click:Connect(function()
+    editOverlay.Visible = false
+    codeBox:CaptureFocus()
+end)
+codeBox.FocusLost:Connect(function()
+    editOverlay.Visible = true
+end)
+local function updateLineNumbers()
+    local text = codeBox.Text
+    local lines = 1
+    for _ in text:gmatch("\n") do lines = lines + 1 end
+    local nums = {}
+    for i = 1, lines do
+        nums[i] = tostring(i)
+    end
+    lineNumberLabel.Text = table.concat(nums, "\n")
+end
+updateLineNumbers()
+codeBox:GetPropertyChangedSignal("Text"):Connect(updateLineNumbers)
+local bottomBar = create("Frame", {
+    AnchorPoint = Vector2.new(0, 1),
+    Position = UDim2.new(0, 12, 1, -8),
+    Size = UDim2.new(1, -24, 0, 32),
+    BackgroundTransparency = 1,
+    ZIndex = 5
+})
+bottomBar.Parent = editorPage
+local bottomLeft = create("Frame", {Size = UDim2.new(0.5, 0, 1, 0), BackgroundTransparency = 1, ZIndex = 5})
+bottomLeft.Parent = bottomBar
+local bottomLeftLayout = create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8)})
+bottomLeftLayout.Parent = bottomLeft
+local function makeBottomBtn(text, iconName)
+    local btn = create("TextButton", {Size = UDim2.new(0, 85, 0, 30), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, Text = "", ZIndex = 6})
+    corner(8, btn)
+    stroke(theme.border, 1, btn)
+    local icon = GetIcon(iconName, UDim2.new(0, 13, 0, 13))
+    if icon then
+        icon.Position = UDim2.new(0, 8, 0.5, -6)
+        icon.Parent = btn
+    end
+    local txt = create("TextLabel", {Position = UDim2.new(0, 26, 0, 0), Size = UDim2.new(1, -28, 1, 0), BackgroundTransparency = 1, Text = text, TextColor3 = theme.text, TextSize = 11, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center})
+    txt.Parent = btn
+    return btn
+end
+local execBtn = makeBottomBtn("Execute", "play")
+execBtn.Parent = bottomLeft
+local clearBtn = makeBottomBtn("Clear", "trash-2")
+clearBtn.Parent = bottomLeft
+local pasteBtn = makeBottomBtn("Paste", "clipboard")
+pasteBtn.Parent = bottomLeft
+local execClipBtn = create("TextButton", {
+    AnchorPoint = Vector2.new(1, 0.5),
+    Position = UDim2.new(1, 0, 0.5, 0),
+    Size = UDim2.new(0, 150, 0, 30),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.15,
+    BorderSizePixel = 0,
+    Text = "",
+    ZIndex = 6
+})
+corner(8, execClipBtn)
+stroke(theme.border, 1, execClipBtn)
+local clipIcon = GetIcon("clipboard-list", UDim2.new(0, 13, 0, 13))
+if clipIcon then
+    clipIcon.Position = UDim2.new(0, 8, 0.5, -6)
+    clipIcon.Parent = execClipBtn
+end
+local clipText = create("TextLabel", {Position = UDim2.new(0, 26, 0, 0), Size = UDim2.new(1, -28, 1, 0), BackgroundTransparency = 1, Text = "Execute clipboard", TextColor3 = theme.text, TextSize = 11, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center})
+clipText.Parent = execClipBtn
+execClipBtn.Parent = bottomBar
+local consolePage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+consolePage.Parent = contentFrame
+local consoleHeader = create("Frame", {Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, ZIndex = 3})
+corner(8, consoleHeader)
+consoleHeader.Parent = consolePage
+local consoleTitle = create("TextLabel", {Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0), BackgroundTransparency = 1, Text = "Console", TextColor3 = theme.textDim, TextSize = 12, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 4})
+consoleTitle.Parent = consoleHeader
+local consoleScroll = create("ScrollingFrame", {Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, -10, 1, -30), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3})
+consoleScroll.Parent = consolePage
+local consoleList = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4)})
+consoleList.Parent = consoleScroll
+create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6)}).Parent = consoleScroll
+local scrollTrack = create("Frame", {
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, -2, 0, 32),
+    Size = UDim2.new(0, 6, 1, -34),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.6,
+    BorderSizePixel = 0,
+    ZIndex = 2
+})
+corner(3, scrollTrack)
+scrollTrack.Parent = consolePage
+local gamepadPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+gamepadPage.Parent = contentFrame
+local updateBtn = create("TextButton", {
+    Position = UDim2.new(0, 12, 0, 12),
+    Size = UDim2.new(0, 110, 0, 26),
+    BackgroundColor3 = theme.accent,
+    BackgroundTransparency = 0.15,
+    Text = "",
+    BorderSizePixel = 0,
+    ZIndex = 5
+})
+corner(8, updateBtn)
+updateBtn.Parent = gamepadPage
+local updateIcon = GetIcon("download", UDim2.new(0, 12, 0, 12), Color3.fromRGB(255,255,255))
+if updateIcon then
+    updateIcon.Position = UDim2.new(0, 8, 0.5, -6)
+    updateIcon.Parent = updateBtn
+end
+local updateText = create("TextLabel", {Position = UDim2.new(0, 26, 0, 0), Size = UDim2.new(0, 60, 1, 0), BackgroundTransparency = 1, Text = "Save", TextColor3 = Color3.fromRGB(255,255,255), TextSize = 12, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6})
+updateText.Parent = updateBtn
+local searchBox = create("Frame", {
+    Position = UDim2.new(0, 130, 0, 12),
+    Size = UDim2.new(1, -142, 0, 26),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.15,
+    BorderSizePixel = 0,
+    ZIndex = 5
+})
+corner(8, searchBox)
+searchBox.Parent = gamepadPage
+local searchIcon = GetIcon("search", UDim2.new(0, 12, 0, 12), theme.textDim)
+if searchIcon then
+    searchIcon.Position = UDim2.new(0, 8, 0.5, -6)
+    searchIcon.Parent = searchBox
+end
+local searchInput = create("TextBox", {
+    Position = UDim2.new(0, 26, 0, 0),
+    Size = UDim2.new(1, -32, 1, 0),
+    BackgroundTransparency = 1,
+    Text = "Search for the scripts you have Save",
+    TextColor3 = theme.textDim,
+    TextSize = 12,
+    Font = Enum.Font.Gotham,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Center,
+    ClearTextOnFocus = true,
+    ZIndex = 6
+})
+searchInput.Parent = searchBox
+local scriptListScroll = create("ScrollingFrame", {
+    Position = UDim2.new(0, 12, 0, 48),
+    Size = UDim2.new(1, -24, 1, -56),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = theme.textDim,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ZIndex = 3
+})
+scriptListScroll.Parent = gamepadPage
+local scriptListLayout = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8)})
+scriptListLayout.Parent = scriptListScroll
+create("UIPadding", {PaddingLeft = UDim.new(0, 0), PaddingRight = UDim.new(0, 0), PaddingTop = UDim.new(0, 0), PaddingBottom = UDim.new(0, 8)}).Parent = scriptListScroll
+local modalOverlay = create("Frame", {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+    BackgroundTransparency = 0.6,
+    BorderSizePixel = 0,
+    Visible = false,
+    ZIndex = 200
+})
+modalOverlay.Parent = screenGui
+local modalCard = create("Frame", {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    Size = UDim2.new(0, 360, 0, 420),
+    BackgroundColor3 = theme.surface,
+    BackgroundTransparency = 0.05,
+    BorderSizePixel = 0,
+    ZIndex = 201
+})
+corner(16, modalCard)
+modalCard.Parent = modalOverlay
+local modalTitle = create("TextLabel", {
+    Position = UDim2.new(0, 20, 0, 16),
+    Size = UDim2.new(1, -40, 0, 28),
+    BackgroundTransparency = 1,
+    Text = "Enter Details",
+    TextColor3 = theme.text,
+    TextSize = 18,
+    Font = Enum.Font.GothamBold,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 202
+})
+modalTitle.Parent = modalCard
+local modalSub = create("TextLabel", {
+    Position = UDim2.new(0, 20, 0, 46),
+    Size = UDim2.new(1, -40, 0, 40),
+    BackgroundTransparency = 1,
+    Text = "Complete the necessary parameters to upload your client script",
+    TextColor3 = theme.textDim,
+    TextSize = 12,
+    Font = Enum.Font.Gotham,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextWrapped = true,
+    ZIndex = 202
+})
+modalSub.Parent = modalCard
+local modalClose = create("TextButton", {
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, -16, 0, 16),
+    Size = UDim2.new(0, 28, 0, 28),
+    BackgroundTransparency = 1,
+    Text = "",
+    ZIndex = 203
+})
+local modalCloseIcon = GetIcon("x", UDim2.new(0, 18, 0, 18), theme.textDim)
+if modalCloseIcon then
+    modalCloseIcon.Position = UDim2.new(0.5, -9, 0.5, -9)
+    modalCloseIcon.Parent = modalClose
+end
+modalClose.Parent = modalCard
+local titleBox = create("Frame", {
+    Position = UDim2.new(0, 20, 0, 96),
+    Size = UDim2.new(1, -40, 0, 56),
+    BackgroundColor3 = theme.surfaceLight,
+    BackgroundTransparency = 0.3,
+    BorderSizePixel = 0,
+    ZIndex = 202
+})
+corner(12, titleBox)
+stroke(theme.border, 1, titleBox)
+titleBox.Parent = modalCard
+local titleLabel = create("TextLabel", {
+    Position = UDim2.new(0, 12, 0, 8),
+    Size = UDim2.new(1, -24, 0, 18),
+    BackgroundTransparency = 1,
+    Text = "Title",
+    TextColor3 = theme.textDim,
+    TextSize = 11,
+    Font = Enum.Font.GothamBold,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 203
+})
+titleLabel.Parent = titleBox
+local titleInput = create("TextBox", {
+    Position = UDim2.new(0, 12, 0, 26),
+    Size = UDim2.new(1, -24, 0, 26),
+    BackgroundTransparency = 1,
+    Text = "Enter Your Title...",
+    TextColor3 = theme.text,
+    TextSize = 14,
+    Font = Enum.Font.Gotham,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Center,
+    ClearTextOnFocus = true,
+    ZIndex = 203
+})
+titleInput.Parent = titleBox
+local scriptBox = create("Frame", {
+    Position = UDim2.new(0, 20, 0, 164),
+    Size = UDim2.new(1, -40, 0, 160),
+    BackgroundColor3 = theme.surfaceLight,
+    BackgroundTransparency = 0.3,
+    BorderSizePixel = 0,
+    ZIndex = 202
+})
+corner(12, scriptBox)
+stroke(theme.border, 1, scriptBox)
+scriptBox.Parent = modalCard
+local scriptLabel = create("TextLabel", {
+    Position = UDim2.new(0, 12, 0, 8),
+    Size = UDim2.new(1, -24, 0, 18),
+    BackgroundTransparency = 1,
+    Text = "Script",
+    TextColor3 = theme.textDim,
+    TextSize = 11,
+    Font = Enum.Font.GothamBold,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 203
+})
+scriptLabel.Parent = scriptBox
+local scriptInput = create("TextBox", {
+    Position = UDim2.new(0, 12, 0, 28),
+    Size = UDim2.new(1, -24, 1, -36),
+    BackgroundTransparency = 1,
+    Text = "Enter Your Script...",
+    TextColor3 = theme.text,
+    TextSize = 13,
+    Font = Enum.Font.Code,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    ClearTextOnFocus = true,
+    MultiLine = true,
+    TextWrapped = true,
+    ZIndex = 203
+})
+scriptInput.Parent = scriptBox
+local addScriptBtn = create("TextButton", {
+    Position = UDim2.new(0, 20, 1, -56),
+    Size = UDim2.new(1, -40, 0, 40),
+    BackgroundColor3 = theme.accent,
+    BackgroundTransparency = 0.15,
+    Text = "",
+    BorderSizePixel = 0,
+    ZIndex = 202
+})
+corner(10, addScriptBtn)
+addScriptBtn.Parent = modalCard
+local addScriptText = create("TextLabel", {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    Text = "Add Script",
+    TextColor3 = Color3.fromRGB(255,255,255),
+    TextSize = 14,
+    Font = Enum.Font.GothamBold,
+    ZIndex = 203
+})
+addScriptText.Parent = addScriptBtn
+local saveFolder = "DeltaSavedScripts"
+local function ensureFolder()
+    local ok, _ = pcall(function()
+        if not isfolder(saveFolder) then
+            makefolder(saveFolder)
+        end
+    end)
+    return ok
+end
+local function refreshScriptList(filter)
+    for _, child in pairs(scriptListScroll:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    local ok, files = pcall(function() return listfiles(saveFolder) end)
+    if not ok or not files then return end
+    for _, filePath in ipairs(files) do
+        local name = filePath:match("([^/\\]+)%.lua$") or filePath:match("([^/\\]+)$")
+        if not name then
+        elseif filter and filter ~= "" and not name:lower():find(filter:lower()) then
+        else
+            local item = create("Frame", {
+                Size = UDim2.new(1, 0, 0, 44),
+                BackgroundColor3 = theme.surface,
+                BackgroundTransparency = 0.15,
+                BorderSizePixel = 0,
+                ZIndex = 4
+            })
+            corner(10, item)
+            local itemTitle = create("TextLabel", {
+                Position = UDim2.new(0, 14, 0, 0),
+                Size = UDim2.new(0.5, 0, 1, 0),
+                BackgroundTransparency = 1,
+                Text = name,
+                TextColor3 = theme.text,
+                TextSize = 13,
+                Font = Enum.Font.GothamBold,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Center,
+                ZIndex = 5
+            })
+            itemTitle.Parent = item
+            local delBtn = create("TextButton", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                Position = UDim2.new(1, -96, 0.5, 0),
+                Size = UDim2.new(0, 80, 0, 28),
+                BackgroundColor3 = theme.surfaceLight,
+                BackgroundTransparency = 0.2,
+                Text = "",
+                BorderSizePixel = 0,
+                ZIndex = 5
+            })
+            corner(8, delBtn)
+            local delText = create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "DELETE", TextColor3 = theme.text, TextSize = 11, Font = Enum.Font.GothamBold, ZIndex = 6})
+            delText.Parent = delBtn
+            delBtn.Parent = item
+            local execBtn2 = create("TextButton", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                Position = UDim2.new(1, -8, 0.5, 0),
+                Size = UDim2.new(0, 80, 0, 28),
+                BackgroundColor3 = theme.accent,
+                BackgroundTransparency = 0.2,
+                Text = "",
+                BorderSizePixel = 0,
+                ZIndex = 5
+            })
+            corner(8, execBtn2)
+            local execText2 = create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "EXECUTE", TextColor3 = Color3.fromRGB(255,255,255), TextSize = 11, Font = Enum.Font.GothamBold, ZIndex = 6})
+            execText2.Parent = execBtn2
+            execBtn2.Parent = item
+            delBtn.MouseButton1Click:Connect(function()
+                pcall(function() delfile(filePath) end)
+                item:Destroy()
+                refreshScriptList(searchInput.Text)
+            end)
+            execBtn2.MouseButton1Click:Connect(function()
+                local ok2, code2 = pcall(function() return readfile(filePath) end)
+                if ok2 and code2 and code2 ~= "" then
+                    cleanupOldUI()
+                    AddLog("> Executing saved script: " .. name, "info")
+                    local fn2, err2 = loadstring(code2)
+                    if not fn2 then
+                        AddLog("[Error] " .. tostring(err2), "error")
+                        return
+                    end
+                    local success2, runErr2 = pcall(fn2)
+                    if not success2 then
+                        AddLog("[Error] " .. tostring(runErr2), "error")
+                    else
+                        AddLog("> Execution finished", "info")
+                    end
+                end
+            end)
+            item.Parent = scriptListScroll
+        end
+    end
+end
+updateBtn.MouseButton1Click:Connect(function()
+    modalOverlay.Visible = true
+    titleInput.Text = "Enter Your Title..."
+    scriptInput.Text = "Enter Your Script..."
+end)
+modalClose.MouseButton1Click:Connect(function()
+    modalOverlay.Visible = false
+end)
+modalOverlay.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local pos = input.Position
+        local cardPos = modalCard.AbsolutePosition
+        local cardSize = modalCard.AbsoluteSize
+        if pos.X < cardPos.X or pos.X > cardPos.X + cardSize.X or pos.Y < cardPos.Y or pos.Y > cardPos.Y + cardSize.Y then
+            modalOverlay.Visible = false
+        end
+    end
+end)
+addScriptBtn.MouseButton1Click:Connect(function()
+    local title = titleInput.Text
+    local scriptContent = scriptInput.Text
+    if title == "" or title == "Enter Your Title..." then
+        return
+    end
+    if scriptContent == "" or scriptContent == "Enter Your Script..." then
+        return
+    end
+    ensureFolder()
+    local fileName = title:gsub("[^%w%s_-]", ""):gsub("%s+", "_")
+    if fileName == "" then fileName = "untitled" end
+    pcall(function()
+        writefile(saveFolder .. "/" .. fileName .. ".lua", scriptContent)
+    end)
+    modalOverlay.Visible = false
+    refreshScriptList(searchInput.Text)
+end)
+searchInput:GetPropertyChangedSignal("Text"):Connect(function()
+    refreshScriptList(searchInput.Text)
+end)
+task.spawn(function()
+    task.wait(0.5)
+    refreshScriptList("")
+end)
+local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+cloudPage.Parent = contentFrame
+local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+settingsPage.Parent = contentFrame
+pages.house = editorPage
+pages.terminal = consolePage
+pages["gamepad-2"] = gamepadPage
+pages.cloud = cloudPage
+pages.settings = settingsPage
+local allPingLabels = {pingLabel}
+local allFpsLabels = {fpsLabel}
+local allTimeLabels = {timeLabel}
+local function AddLog(msg, msgType)
+    local color = theme.text
+    if msgType == "error" then color = theme.red
+    elseif msgType == "warn" then color = theme.warn end
+    local logLabel = create("TextLabel", {Size = UDim2.new(1, -12, 0, 18), BackgroundTransparency = 1, Text = tostring(msg), TextColor3 = color, TextSize = 12, Font = Enum.Font.Code, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y, ZIndex = 12})
+    logLabel.Parent = consoleScroll
+end
+local oldPrint = print
+local oldWarn = warn
+local oldError = error
+print = function(...)
+    local args = {...}
+    local str = ""
+    for i, v in ipairs(args) do
+        str = str .. tostring(v)
+        if i < #args then str = str .. "  " end
+    end
+    AddLog(str, "info")
+    return oldPrint(...)
+end
+warn = function(...)
+    local args = {...}
+    local str = ""
+    for i, v in ipairs(args) do
+        str = str .. tostring(v)
+        if i < #args then str = str .. "  " end
+    end
+    AddLog(str, "warn")
+    return oldWarn(...)
+end
+error = function(...)
+    local args = {...}
+    local str = ""
+    for i, v in ipairs(args) do
+        str = str .. tostring(v)
+        if i < #args then str = str .. "  " end
+    end
+    AddLog(str, "error")
+    return oldError(...)
+end
+local function cleanupOldUI()
+    for _, child in pairs(v3:GetChildren()) do
+        if #child.Name > 20 then
+            for _, d in pairs(child:GetDescendants()) do
+                if d.Name == "Executor" then
+                    child:Destroy()
+                    break
+                end
+            end
+        end
+    end
+end
+cleanupOldUI()
+local function switchPage(pageName)
+    if pageName == currentPage then return end
+    currentPage = pageName
+    for _, page in pairs(pages) do
+        page.Visible = false
+    end
+    if pages[pageName] then
+        pages[pageName].Visible = true
+    end
+    bottomBar.Visible = (pageName == "house")
+    animateIndicator(navButtons[pageName])
+end
+for _, name in ipairs(navNames) do
+    navButtons[name].MouseButton1Click:Connect(function()
+        switchPage(name)
+    end)
+end
+task.spawn(function()
+    while true do
+        local t = os.date("*t")
+        local suffix = t.hour >= 12 and "PM" or "AM"
+        local hour = t.hour % 12
+        if hour == 0 then hour = 12 end
+        local min = string.format("%02d", t.min)
+        local timeStr = hour .. ":" .. min .. " " .. suffix
+        for _, label in ipairs(allTimeLabels) do
+            label.Text = timeStr
+        end
+        task.wait(60)
+    end
+end)
+task.spawn(function()
+    local lastUpdate = 0
+    local frameCount = 0
+    v5.RenderStepped:Connect(function()
+        frameCount = frameCount + 1
+        local now = tick()
+        if now - lastUpdate >= 1 then
+            local fpsText = frameCount .. " FPS"
+            local pingText = "0 ms"
+            local ping = v6.Network.ServerStatsItem["Data Ping"]
+            if ping then
+                pingText = math.floor(ping:GetValue()) .. " ms"
+            end
+            for _, label in ipairs(allPingLabels) do
+                label.Text = pingText
+            end
+            for _, label in ipairs(allFpsLabels) do
+                label.Text = fpsText
+            end
+            frameCount = 0
+            lastUpdate = now
+        end
+    end)
+end)
+execBtn.MouseButton1Click:Connect(function()
+    cleanupOldUI()
+    local code = codeBox.Text
+    if code and code ~= "" then
+        AddLog("> Executing script...", "info")
+        local fn, compileErr = loadstring(code)
+        if not fn then
+            AddLog("[Error] " .. tostring(compileErr), "error")
+            return
+        end
+        local success, runErr = pcall(fn)
+        if not success then
+            AddLog("[Error] " .. tostring(runErr), "error")
+        else
+            AddLog("> Execution finished", "info")
+        end
+    end
+end)
+clearBtn.MouseButton1Click:Connect(function()
+    codeBox.Text = ""
+    updateLineNumbers()
+    AddLog("> Editor cleared", "info")
+end)
+pasteBtn.MouseButton1Click:Connect(function()
+    local ok, result = pcall(getclipboard)
+    if ok and result then
+        codeBox.Text = result
+        updateLineNumbers()
+        AddLog("> Pasted from clipboard", "info")
+    end
+end)
+execClipBtn.MouseButton1Click:Connect(function()
+    cleanupOldUI()
+    local ok, result = pcall(getclipboard)
+    if ok and result and result ~= "" then
+        AddLog("> Executing clipboard...", "info")
+        local fn, compileErr = loadstring(result)
+        if not fn then
+            AddLog("[Error] " .. tostring(compileErr), "error")
+            return
+        end
+        local success, runErr = pcall(fn)
+        if not success then
+            AddLog("[Error] " .. tostring(runErr), "error")
+        else
+            AddLog("> Clipboard execution finished", "info")
+        end
+    end
+end)
+v2.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.Insert then
+        main.Visible = not main.Visible
+    end
+end)
+AddLog("Delta UI Core loaded", "info")
+AddLog("Ready", "info")
+pcall(function()
+    local recentErrors = {}
+    game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
+        local msg = tostring(message)
+        local now = tick()
+        if recentErrors[msg] and (now - recentErrors[msg].time) < 3 then
+            recentErrors[msg].count = recentErrors[msg].count + 1
+            return
+        end
+        recentErrors[msg] = {time = now, count = 1}
+        AddLog("[Server] " .. msg, "error")
+    end)
+end)
