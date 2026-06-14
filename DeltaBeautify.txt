@@ -729,22 +729,27 @@ local function ensureFolder()
     end
     return true
 end
+local function hasExecutorDescendant(container)
+    for _, d in pairs(container:GetDescendants()) do
+        if d.Name == "Executor" then
+            return true
+        end
+    end
+    return false
+end
+
+local function destroyExecutorUI(container)
+    if hasExecutorDescendant(container) then
+        container:Destroy()
+        return true
+    end
+    return false
+end
+
 local function cleanupOldUI()
     for _, child in pairs(v3:GetChildren()) do
         if #child.Name > 20 then
-            local ok, target = pcall(function()
-                for _, d in pairs(child:GetDescendants()) do
-                    if d.Name == "Executor" then
-                        return d.Parent
-                    end
-                end
-                return nil
-            end)
-            if ok and target then
-                pcall(function()
-                    target:Destroy()
-                end)
-            end
+            destroyExecutorUI(child)
         end
     end
 end
@@ -976,6 +981,7 @@ v2.InputBegan:Connect(function(input, gpe)
         main.Visible = not main.Visible
     end
 end)
+cleanupOldUI()
 AddLog("Delta UI Core loaded", "info")
 AddLog("Ready", "info")
 local recentErrors = {}
