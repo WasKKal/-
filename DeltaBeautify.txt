@@ -121,6 +121,8 @@ local translations = {
     ["error ä½ æ²¡æå¼å¯console"] = {en = "error Console is disabled", zh = "error ä½ æ²¡æå¼å¯æ§å¶å°", ko = "error ì½ìì´ ë¹íì±íëì´ ììµëë¤", ja = "error ã³ã³ã½ã¼ã«ãç¡å¹ã§ã"},
 }
 
+local settingsData = {language = "en", uiRefs = {}}
+
 local function t(key)
     local lang = settingsData.language or "en"
     local entry = translations[key]
@@ -129,8 +131,6 @@ local function t(key)
     end
     return key
 end
-
-local settingsData = {language = "en", uiRefs = {}}
 
 local function makeSettingRow(title, desc, layoutOrder)
     local row = create("Frame", {Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, LayoutOrder = layoutOrder, ZIndex = 4})
@@ -412,11 +412,7 @@ local _, getAutoExecState = makeToggle(row11, false, function(state)
     end
 end)
 row11.Parent = settingsScroll
-pages["house"] = editorPage
-pages["terminal"] = consolePage
-pages["gamepad-2"] = gamepadPage
-pages["cloud"] = cloudPage
-pages["settings"] = settingsPage
+
 local allTimeLabels = {timeLabel}
 local allPingLabels = {pingLabel}
 local allFpsLabels = {fpsLabel}
@@ -1118,6 +1114,11 @@ local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTrans
 cloudPage.Parent = contentFrame
 local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
 settingsPage.Parent = contentFrame
+pages["house"] = editorPage
+pages["terminal"] = consolePage
+pages["gamepad-2"] = gamepadPage
+pages["cloud"] = cloudPage
+pages["settings"] = settingsPage
 local settingsScroll = create("ScrollingFrame", {Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(1, -24, 1, -24), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3})
 settingsScroll.Parent = settingsPage
 local settingsList = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)})
@@ -1275,11 +1276,11 @@ for _, name in ipairs(navNames) do
 end
 task.spawn(function()
     while true do
-        local t = os.date("*t")
-        local suffix = t.hour >= 12 and "PM" or "AM"
-        local hour = t.hour % 12
+        local timeTable = os.date("*t")
+        local suffix = timeTable.hour >= 12 and "PM" or "AM"
+        local hour = timeTable.hour % 12
         if hour == 0 then hour = 12 end
-        local min = string.format("%02d", t.min)
+        local min = string.format("%02d", timeTable.min)
         local timeStr = hour .. ":" .. min .. " " .. suffix
         for _, label in ipairs(allTimeLabels) do
             label.Text = timeStr
