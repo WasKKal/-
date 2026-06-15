@@ -1104,6 +1104,22 @@ local function destroyExecutorUI(container)
     return false
 end
 
+local function getClipboardContent()
+    local methods = {
+        function() return syn_clipboard_get and syn_clipboard_get() end,
+        function() return getclipboard and getclipboard() end,
+        function() return KRNL_CLIPBOARD and KRNL_CLIPBOARD.get and KRNL_CLIPBOARD.get() end,
+        function() return Clipboard and Clipboard.get and Clipboard.get() end,
+    }
+    for _, method in ipairs(methods) do
+        local ok, result = pcall(method)
+        if ok and result and result ~= "" then
+            return result
+        end
+    end
+    return nil
+end
+
 local function cleanupOldUI()
     for _, child in pairs(v3:GetChildren()) do
         if #child.Name > 20 then
@@ -1313,7 +1329,7 @@ clearBtn.MouseButton1Click:Connect(function()
     AddLog("> " .. t("Editor cleared"), "info")
 end)
 pasteBtn.MouseButton1Click:Connect(function()
-    local result = syn_clipboard_get()
+    local result = getClipboardContent()
     if result then
         codeBox.Text = result
         updateLineNumbers()
@@ -1322,7 +1338,7 @@ pasteBtn.MouseButton1Click:Connect(function()
 end)
 execClipBtn.MouseButton1Click:Connect(function()
     cleanupOldUI()
-    local result = syn_clipboard_get()
+    local result = getClipboardContent()
     if result and result ~= "" then
         AddLog("> " .. t("Executing clipboard..."), "info")
         local fn, compileErr = loadstring(result)
