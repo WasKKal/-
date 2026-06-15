@@ -26,9 +26,17 @@
 {
   "name": "霖溺脚本",
   "Type": "Script",
-  "Desc": "支持113个服务器 主群744830231",
+  "Desc": "国内高质量免费脚本 支持113个服务器 主群744830231",
   "Url": "https://raw.githubusercontent.com/ShenJiaoBen/ScriptLoader/refs/heads/main/Linni_FreeLoader.lua",
   "Visions": "1.0.0",
   "Author": "Linni"
+},
+{
+  "name": "皮脚本",
+  "Type": "Script",
+  "Desc": "通用脚本 主群711757444",
+  "Url": "https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua",
+  "Visions": "1.0.0",
+  "Author": "小皮"
 }
 ]
