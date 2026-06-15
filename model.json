@@ -8,11 +8,27 @@
   "Author": "Was"
 },
 {
-  "name": "DeltaUI简易扩展包",
-  "Type": "Model",
-  "Desc": "在设置页面添加一些功能",
-  "Url": "https://github.com/WasKKal/-/raw/refs/heads/main/Model1.lua",
-  "Visions": "0.0.1",
+  "name": "TrashHub-CDNLink",
+  "Type": "Script",
+  "Desc": "支持72个服务器 主群786284990",
+  "Url": "https://cdn.jsdelivr.net/gh/WasKKal/OnlyJumpToOther@main/loader.lua",
+  "Visions": "1.0.0",
   "Author": "Was"
+},
+{
+  "name": "TrashHub-GitLink",
+  "Type": "Script",
+  "Desc": "支持72个服务器 主群786284990",
+  "Url": "https://raw.githubusercontent.com/WasKKal/OnlyJumpToOther/main/loader.lua",
+  "Visions": "1.0.0",
+  "Author": "Was"
+},
+{
+  "name": "霖溺脚本",
+  "Type": "Script",
+  "Desc": "支持113个服务器 主群744830231",
+  "Url": "https://raw.githubusercontent.com/ShenJiaoBen/ScriptLoader/refs/heads/main/Linni_FreeLoader.lua",
+  "Visions": "1.0.0",
+  "Author": "Linni"
 }
 ]
