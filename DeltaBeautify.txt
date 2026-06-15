@@ -153,19 +153,19 @@ end
 
 local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
 local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
-local settingsScroll = create("ScrollingFrame", {Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(1, -24, 1, -24), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3})
+local settingsScroll = create("ScrollingFrame", {Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(1, -24, 1, -24), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), ZIndex = 3})
 settingsScroll.Parent = settingsPage
 local settingsList = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)})
 settingsList.Parent = settingsScroll
 
-local function makeSettingRow(title, desc, layoutOrder)
+local function makeSettingRow(titleKey, descKey, layoutOrder)
     local row = create("Frame", {Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, LayoutOrder = layoutOrder, ZIndex = 4})
     corner(12, row)
-    local tLabel = create("TextLabel", {Position = UDim2.new(0, 16, 0, 8), Size = UDim2.new(0.5, 0, 0, 22), BackgroundTransparency = 1, Text = title, TextColor3 = theme.text, TextSize = 14, Font = Enum.Font.SourceSansBold, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5})
+    local tLabel = create("TextLabel", {Position = UDim2.new(0, 16, 0, 8), Size = UDim2.new(0.5, 0, 0, 22), BackgroundTransparency = 1, Text = t(titleKey), TextColor3 = theme.text, TextSize = 14, Font = Enum.Font.SourceSansBold, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5})
     tLabel.Parent = row
-    local dLabel = create("TextLabel", {Position = UDim2.new(0, 16, 0, 30), Size = UDim2.new(0.5, 0, 0, 18), BackgroundTransparency = 1, Text = desc, TextColor3 = theme.textDim, TextSize = 11, Font = Enum.Font.SourceSans, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5})
+    local dLabel = create("TextLabel", {Position = UDim2.new(0, 16, 0, 30), Size = UDim2.new(0.5, 0, 0, 18), BackgroundTransparency = 1, Text = t(descKey), TextColor3 = theme.textDim, TextSize = 11, Font = Enum.Font.SourceSans, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5})
     dLabel.Parent = row
-    table.insert(settingsData.uiRefs, {title = title, desc = desc, tLabel = tLabel, dLabel = dLabel})
+    table.insert(settingsData.uiRefs, {titleKey = titleKey, descKey = descKey, tLabel = tLabel, dLabel = dLabel})
     return row
 end
 
@@ -237,7 +237,8 @@ local function makeDropdown(parent, options, defaultIndex, callback)
         })
         corner(8, listFrame)
         stroke(theme.border, 1, listFrame)
-        listFrame.Parent = screenGui
+        local screenGuiAncestor = btn:FindFirstAncestorOfClass("ScreenGui")
+        listFrame.Parent = screenGuiAncestor
         for i, opt in ipairs(options) do
             local optBtn = create("TextButton", {Position = UDim2.new(0, 0, 0, (i-1)*30), Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Text = "", ZIndex = 1000})
             local optTxt = create("TextLabel", {Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -20, 1, 0), BackgroundTransparency = 1, Text = opt, TextColor3 = theme.text, TextSize = 12, Font = Enum.Font.SourceSans, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 1001})
@@ -265,40 +266,40 @@ local tpService = game:GetService("TeleportService")
 local mktService = game:GetService("MarketplaceService")
 local vUser = game:GetService("VirtualUser")
 
-local row0 = makeSettingRow(t("Language"), t("Select your preferred language"), 0)
+local row0 = makeSettingRow("language", "language_desc", 0)
 makeDropdown(row0, {"English", "中文", "한국어", "日本語"}, 1, function(val)
     local langMap = {["English"] = "en", ["中文"] = "zh", ["한국어"] = "ko", ["日本語"] = "ja"}
     settingsData.language = langMap[val] or "en"
     for _, ref in ipairs(settingsData.uiRefs) do
         if ref.tLabel and ref.tLabel.Parent then
-            ref.tLabel.Text = t(ref.title)
+            ref.tLabel.Text = t(ref.titleKey)
         end
         if ref.dLabel and ref.dLabel.Parent then
-            ref.dLabel.Text = t(ref.desc)
+            ref.dLabel.Text = t(ref.descKey)
         end
     end
 end)
 row0.Parent = settingsScroll
 
-local row1 = makeSettingRow(t("Rejoin"), t("Rejoins your current server"), 1)
+local row1 = makeSettingRow("rejoin", "rejoin_desc", 1)
 makeActionButton(t("CLICK HERE"), row1, function()
     tpService:TeleportToPlaceInstance(game.PlaceId, game.JobId, v7)
 end)
 row1.Parent = settingsScroll
 
-local row2 = makeSettingRow(t("Small Server"), t("Joins a server with a low playercount"), 2)
+local row2 = makeSettingRow("small_server", "small_server_desc", 2)
 makeActionButton(t("CLICK HERE"), row2, function()
     tpService:Teleport(game.PlaceId, v7)
 end)
 row2.Parent = settingsScroll
 
-local row3 = makeSettingRow(t("Serverhop"), t("Teleport to a new server"), 3)
+local row3 = makeSettingRow("serverhop", "serverhop_desc", 3)
 makeActionButton(t("CLICK HERE"), row3, function()
     tpService:Teleport(game.PlaceId, v7)
 end)
 row3.Parent = settingsScroll
 
-local row4 = makeSettingRow(t("FPS Cap"), t("Change the FPS cap for a smoother experience"), 4)
+local row4 = makeSettingRow("fps_cap", "fps_cap_desc", 4)
 makeDropdown(row4, {"30 FPS", "60 FPS", "120 FPS", "240 FPS", "360 FPS", "Unlimited"}, 2, function(val)
     local cap = val == "30 FPS" and 30 or val == "60 FPS" and 60 or val == "120 FPS" and 120 or val == "240 FPS" and 240 or val == "360 FPS" and 360 or 0
     if setfpscap then
@@ -307,14 +308,14 @@ makeDropdown(row4, {"30 FPS", "60 FPS", "120 FPS", "240 FPS", "360 FPS", "Unlimi
 end)
 row4.Parent = settingsScroll
 
-local row5 = makeSettingRow(t("Icon Size"), t("Change the floating icon's size"), 5)
+local row5 = makeSettingRow("icon_size", "icon_size_desc", 5)
 makeDropdown(row5, {"Small", "Medium", "Large"}, 2, function(val)
     local sz = val == "Small" and 25 or val == "Medium" and 35 or 45
     orbFrame.Size = UDim2.new(0, sz, 0, sz)
 end)
 row5.Parent = settingsScroll
 
-local row6 = makeSettingRow(t("Icon Shape"), t("Change the floating icon's shape"), 6)
+local row6 = makeSettingRow("icon_shape", "icon_shape_desc", 6)
 makeDropdown(row6, {"Circle", "Square"}, 1, function(val)
     for _, c in pairs(orbFrame:GetChildren()) do
         if c:IsA("UICorner") then
@@ -327,7 +328,7 @@ makeDropdown(row6, {"Circle", "Square"}, 1, function(val)
 end)
 row6.Parent = settingsScroll
 
-local row7 = makeSettingRow(t("Disable Robux"), t("Block all ROBUX purchases making it impossible to lose ROBUX to scams"), 7)
+local row7 = makeSettingRow("disable_robux", "disable_robux_desc", 7)
 local _, getRobuxState = makeToggle(row7, false, function(state)
     if state then
         settingsData.robuxHook = mktService.PromptProductPurchase
@@ -353,7 +354,7 @@ local _, getRobuxState = makeToggle(row7, false, function(state)
 end)
 row7.Parent = settingsScroll
 
-local row8 = makeSettingRow(t("Verify Teleports"), t("Only allow teleports to the same place id"), 8)
+local row8 = makeSettingRow("verify_teleports", "verify_teleports_desc", 8)
 local _, getVerifyState = makeToggle(row8, false, function(state)
     if state then
         settingsData.tpHook = tpService.Teleport
@@ -385,7 +386,7 @@ local _, getVerifyState = makeToggle(row8, false, function(state)
 end)
 row8.Parent = settingsScroll
 
-local row9 = makeSettingRow(t("Anti AFK"), t("Disable all idle timeout kicks from the source"), 9)
+local row9 = makeSettingRow("anti_afk", "anti_afk_desc", 9)
 local _, getAntiAfkState = makeToggle(row9, false, function(state)
     if state then
         if settingsData.afkConnection then
@@ -407,7 +408,7 @@ local _, getAntiAfkState = makeToggle(row9, false, function(state)
 end)
 row9.Parent = settingsScroll
 
-local row10 = makeSettingRow(t("Console"), t("Toggle roblox console logs in the GUI"), 10)
+local row10 = makeSettingRow("console", "console_desc", 10)
 local _, getConsoleState = makeToggle(row10, true, function(state)
     consoleEnabled = state
     if state then
@@ -421,7 +422,7 @@ local _, getConsoleState = makeToggle(row10, true, function(state)
 end)
 row10.Parent = settingsScroll
 
-local row11 = makeSettingRow(t("Auto Execute"), t("Toggle auto-execution of scripts in the autoexec folder"), 11)
+local row11 = makeSettingRow("auto_execute", "auto_execute_desc", 11)
 local _, getAutoExecState = makeToggle(row11, false, function(state)
     if state and isfolder("autoexec") then
         local ok, files = pcall(listfiles, "autoexec")
@@ -452,55 +453,6 @@ local maxLogEntries = 500
 local logEntryCount = 0
 local pendingLogs = {}
 local logProcessing = false
-
-local function AddLog(message, level)
-    if not consoleEnabled then
-        return
-    end
-    table.insert(pendingLogs, {msg = tostring(message), lvl = level})
-    if logProcessing then return end
-    logProcessing = true
-    task.defer(function()
-        while #pendingLogs > 0 do
-            local batch = {}
-            for i = 1, math.min(10, #pendingLogs) do
-                batch[i] = table.remove(pendingLogs, 1)
-            end
-            for _, log in ipairs(batch) do
-                local color = theme.text
-                if log.lvl == "error" then color = theme.red
-                elseif log.lvl == "warn" then color = theme.warn
-                elseif log.lvl == "info" then color = theme.textDim end
-                local entry = create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 18),
-                    BackgroundTransparency = 1,
-                    Text = log.msg,
-                    TextColor3 = color,
-                    TextSize = 11,
-                    Font = Enum.Font.Code,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    TextYAlignment = Enum.TextYAlignment.Center,
-                    ZIndex = 4
-                })
-                entry.Parent = consoleScroll
-                logEntryCount = logEntryCount + 1
-                if logEntryCount > maxLogEntries then
-                    local first = consoleScroll:FindFirstChildWhichIsA("TextLabel")
-                    if first then
-                        first:Destroy()
-                        logEntryCount = logEntryCount - 1
-                    end
-                end
-            end
-            consoleScroll.CanvasPosition = Vector2.new(0, consoleScroll.AbsoluteCanvasSize.Y)
-            if #pendingLogs > 0 then
-                task.wait(0.05)
-            end
-        end
-        logProcessing = false
-    end)
-end
-
 
 
 local saveFolder = "DeltaPlus/DeltaSavedScripts"
@@ -949,9 +901,87 @@ local consoleTitle = create("TextLabel", {Position = UDim2.new(0, 12, 0, 0), Siz
 consoleTitle.Parent = consoleHeader
 local consoleScroll = create("ScrollingFrame", {Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, -10, 1, -30), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3})
 consoleScroll.Parent = consolePage
+
+
 local consoleList = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4)})
 consoleList.Parent = consoleScroll
 create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6)}).Parent = consoleScroll
+local function AddLog(message, level)
+    if not consoleEnabled or not consoleScroll then
+        return
+    end
+    table.insert(pendingLogs, {msg = tostring(message), lvl = level})
+    if logProcessing then return end
+    logProcessing = true
+    task.defer(function()
+        while #pendingLogs > 0 do
+            local batch = {}
+            for i = 1, math.min(10, #pendingLogs) do
+                batch[i] = table.remove(pendingLogs, 1)
+            end
+            if not consoleScroll then break end
+            for _, log in ipairs(batch) do
+                local color = theme.text
+                if log.lvl == "error" then color = theme.red
+                elseif log.lvl == "warn" then color = theme.warn
+                elseif log.lvl == "info" then color = theme.textDim end
+                local entry = create("TextLabel", {
+                    Size = UDim2.new(1, 0, 0, 20),
+                    BackgroundTransparency = 1,
+                    Text = log.msg,
+                    TextColor3 = color,
+                    TextSize = 11,
+                    Font = Enum.Font.Code,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Top,
+                    TextWrapped = false,
+                    ClipsDescendants = false,
+                    ZIndex = 4
+                })
+                entry.Parent = consoleScroll
+                logEntryCount = logEntryCount + 1
+                if logEntryCount > maxLogEntries then
+                    local first = consoleScroll:FindFirstChildWhichIsA("TextLabel")
+                    if first then
+                        first:Destroy()
+                        logEntryCount = logEntryCount - 1
+                    end
+                end
+            end
+            if consoleScroll then
+                consoleScroll.CanvasPosition = Vector2.new(0, consoleScroll.AbsoluteCanvasSize.Y)
+            end
+            if #pendingLogs > 0 then
+                task.wait(0.05)
+            end
+        end
+        logProcessing = false
+    end)
+end
+
+
+
+local logService = game:GetService("LogService")
+local lastLogTime = 0
+local logDedup = {}
+logService.MessageOut:Connect(function(msg, msgtype)
+    local now = tick()
+    local key = tostring(msg)
+    if logDedup[key] and (now - logDedup[key]) < 2 then
+        return
+    end
+    logDedup[key] = now
+    local level = "info"
+    if msgtype == Enum.MessageType.MessageWarning then level = "warn"
+    elseif msgtype == Enum.MessageType.MessageError then level = "error" end
+    AddLog(msg, level)
+end)
+consoleList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    if consoleScroll then
+        consoleScroll.CanvasSize = UDim2.new(0, 0, 0, consoleList.AbsoluteContentSize.Y + 20)
+    end
+end)
+
 local scrollTrack = create("Frame", {
     AnchorPoint = Vector2.new(1, 0),
     Position = UDim2.new(1, -2, 0, 32),
@@ -1273,7 +1303,23 @@ local function refreshScriptList(filter)
                         AddLog("[" .. t("Error") .. "] " .. tostring(err2), "error")
                         return
                     end
+                    local oldPrint = print
+                    local oldWarn = warn
+                    print = function(...)
+                        local args = {...}
+                        local msg = table.concat(args, " ")
+                        AddLog(msg, "info")
+                        oldPrint(...)
+                    end
+                    warn = function(...)
+                        local args = {...}
+                        local msg = table.concat(args, " ")
+                        AddLog(msg, "warn")
+                        oldWarn(...)
+                    end
                     local ok2, runtimeErr2 = pcall(fn2)
+                    print = oldPrint
+                    warn = oldWarn
                     if not ok2 then
                         AddLog("[" .. t("Error") .. "] " .. tostring(runtimeErr2), "error")
                         return
@@ -1406,7 +1452,23 @@ execBtn.MouseButton1Click:Connect(function()
             AddLog("[" .. t("Error") .. "] " .. tostring(compileErr), "error")
             return
         end
+        local oldPrint = print
+        local oldWarn = warn
+        print = function(...)
+            local args = {...}
+            local msg = table.concat(args, " ")
+            AddLog(msg, "info")
+            oldPrint(...)
+        end
+        warn = function(...)
+            local args = {...}
+            local msg = table.concat(args, " ")
+            AddLog(msg, "warn")
+            oldWarn(...)
+        end
         local ok, runtimeErr = pcall(fn)
+        print = oldPrint
+        warn = oldWarn
         if not ok then
             AddLog("[" .. t("Error") .. "] " .. tostring(runtimeErr), "error")
             return
@@ -1437,7 +1499,23 @@ execClipBtn.MouseButton1Click:Connect(function()
             AddLog("[" .. t("Error") .. "] " .. tostring(compileErr), "error")
             return
         end
+        local oldPrint = print
+        local oldWarn = warn
+        print = function(...)
+            local args = {...}
+            local msg = table.concat(args, " ")
+            AddLog(msg, "info")
+            oldPrint(...)
+        end
+        warn = function(...)
+            local args = {...}
+            local msg = table.concat(args, " ")
+            AddLog(msg, "warn")
+            oldWarn(...)
+        end
         local ok, runtimeErr = pcall(fn)
+        print = oldPrint
+        warn = oldWarn
         if not ok then
             AddLog("[" .. t("Error") .. "] " .. tostring(runtimeErr), "error")
             return
@@ -1493,21 +1571,7 @@ end
 applyConfig()
 
 cleanupOldUI()
-local logService = game:GetService("LogService")
-local lastLogTime = 0
-local logDedup = {}
-logService.MessageOut:Connect(function(msg, msgtype)
-    local now = tick()
-    local key = tostring(msg)
-    if logDedup[key] and (now - logDedup[key]) < 2 then
-        return
-    end
-    logDedup[key] = now
-    local level = "info"
-    if msgtype == Enum.MessageType.MessageWarning then level = "warn"
-    elseif msgtype == Enum.MessageType.MessageError then level = "error" end
-    AddLog(msg, level)
-end)
+
 
 AddLog("Delta UI Core loaded", "info")
 AddLog("Ready", "info")
