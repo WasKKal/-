@@ -926,7 +926,7 @@ local function AddLog(message, level)
                 elseif log.lvl == "warn" then color = theme.warn
                 elseif log.lvl == "info" then color = theme.textDim end
                 local entry = create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 20),
+                    Size = UDim2.new(1, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = log.msg,
                     TextColor3 = color,
@@ -934,8 +934,8 @@ local function AddLog(message, level)
                     Font = Enum.Font.Code,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextYAlignment = Enum.TextYAlignment.Top,
-                    TextWrapped = false,
-                    ClipsDescendants = false,
+                    TextWrapped = true,
+                    AutomaticSize = Enum.AutomaticSize.Y,
                     ZIndex = 4
                 })
                 entry.Parent = consoleScroll
