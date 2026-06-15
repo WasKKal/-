@@ -65,63 +65,82 @@ local theme = {
 }
 
 local translations = {
-    ["Rejoin"] = {en = "Rejoin", zh = "éæ°å å¥", ko = "ì¬ì ì", ja = "ååå "},
-    ["Rejoins your current server"] = {en = "Rejoins your current server", zh = "éæ°å å¥å½åæå¡å¨", ko = "íì¬ ìë²ì ì¬ì ì", ja = "ç¾å¨ã®ãµã¼ãã¼ã«ååå "},
-    ["Small Server"] = {en = "Small Server", zh = "å°æå¡å¨", ko = "ìê·ëª¨ ìë²", ja = "å°è¦æ¨¡ãµã¼ãã¼"},
-    ["Joins a server with a low playercount"] = {en = "Joins a server with a low playercount", zh = "å å¥ç©å®¶è¾å°çæå¡å¨", ko = "íë ì´ì´ê° ì ì ìë² ì°¸ê°", ja = "ãã¬ã¤ã¤ã¼ãå°ãªããµã¼ãã¼ã«åå "},
-    ["Serverhop"] = {en = "Serverhop", zh = "åæ¢æå¡å¨", ko = "ìë² ì´ë", ja = "ãµã¼ãã¼ç§»å"},
-    ["Teleport to a new server"] = {en = "Teleport to a new server", zh = "ä¼ éå°æ°æå¡å¨", ko = "ì ìë²ë¡ ì´ë", ja = "æ°ãããµã¼ãã¼ã«ãã¬ãã¼ã"},
-    ["FPS Cap"] = {en = "FPS Cap", zh = "å¸§çéå¶", ko = "FPS ì í", ja = "FPSå¶é"},
-    ["Change the FPS cap for a smoother experience"] = {en = "Change the FPS cap for a smoother experience", zh = "è°æ´å¸§çéå¶ä»¥è·å¾æ´æµççä½éª", ko = "ë ë¶ëë¬ì´ ê²½íì ìí´ FPS ì í ë³ê²½", ja = "ããã¹ã ã¼ãºãªä½é¨ã®ããFPSå¶éãå¤æ´"},
-    ["Icon Size"] = {en = "Icon Size", zh = "å¾æ å¤§å°", ko = "ìì´ì½ í¬ê¸°", ja = "ã¢ã¤ã³ã³ãµã¤ãº"},
-    ["Change the floating icon's size"] = {en = "Change the floating icon's size", zh = "æ´æ¹æ¬æµ®å¾æ å¤§å°", ko = "íë¡í ìì´ì½ í¬ê¸° ë³ê²½", ja = "ãã­ã¼ãã£ã³ã°ã¢ã¤ã³ã³ã®ãµã¤ãºãå¤æ´"},
-    ["Icon Shape"] = {en = "Icon Shape", zh = "å¾æ å½¢ç¶", ko = "ìì´ì½ ëª¨ì", ja = "ã¢ã¤ã³ã³å½¢ç¶"},
-    ["Change the floating icon's shape"] = {en = "Change the floating icon's shape", zh = "æ´æ¹æ¬æµ®å¾æ å½¢ç¶", ko = "íë¡í ìì´ì½ ëª¨ì ë³ê²½", ja = "ãã­ã¼ãã£ã³ã°ã¢ã¤ã³ã³ã®å½¢ç¶ãå¤æ´"},
-    ["Disable Robux"] = {en = "Disable Robux", zh = "ç¦ç¨ Robux", ko = "Robux ë¹íì±í", ja = "Robuxç¡å¹å"},
-    ["Block all ROBUX purchases making it impossible to lose ROBUX to scams"] = {en = "Block all ROBUX purchases making it impossible to lose ROBUX to scams", zh = "é»æ­¢ææ Robux è´­ä¹°ï¼é²æ­¢è¯éªæå¤±", ko = "ëª¨ë  Robux êµ¬ë§¤ ì°¨ë¨ì¼ë¡ ì¬ê¸° í¼í´ ë°©ì§", ja = "ãã¹ã¦ã®Robuxè³¼å¥ããã­ãã¯ããè©æ¬ºã«ããæå¤±ãé²æ­¢"},
-    ["Verify Teleports"] = {en = "Verify Teleports", zh = "éªè¯ä¼ é", ko = "íë í¬í¸ ê²ì¦", ja = "ãã¬ãã¼ãæ¤è¨¼"},
-    ["Only allow teleports to the same place id"] = {en = "Only allow teleports to the same place id", zh = "ä»åè®¸ä¼ éå°ç¸å Place ID", ko = "ëì¼í ì¥ì IDë¡ë§ íë í¬í¸ íì©", ja = "åãPlace IDã¸ã®ãã¬ãã¼ãã®ã¿è¨±å¯"},
-    ["Anti AFK"] = {en = "Anti AFK", zh = "é²ææº", ko = "AFK ë°©ì§", ja = "AFKé²æ­¢"},
-    ["Disable all idle timeout kicks from the source"] = {en = "Disable all idle timeout kicks from the source", zh = "ç¦ç¨ææç©ºé²è¶æ¶è¸¢åº", ko = "ëª¨ë  ì í´ ìê° ì´ê³¼ í¥ ë¹íì±í", ja = "ãã¹ã¦ã®ã¢ã¤ãã«ã¿ã¤ã ã¢ã¦ãã­ãã¯ãç¡å¹å"},
-    ["Console"] = {en = "Console", zh = "æ§å¶å°", ko = "ì½ì", ja = "ã³ã³ã½ã¼ã«"},
-    ["Toggle roblox console logs in the GUI"] = {en = "Toggle roblox console logs in the GUI", zh = "å¨çé¢ä¸­åæ¢ Roblox æ§å¶å°æ¥å¿", ko = "GUIìì Roblox ì½ì ë¡ê·¸ í ê¸", ja = "GUIã§Robloxã³ã³ã½ã¼ã«ã­ã°ãåãæ¿ã"},
-    ["Auto Execute"] = {en = "Auto Execute", zh = "èªå¨æ§è¡", ko = "ìë ì¤í", ja = "èªåå®è¡"},
-    ["Toggle auto-execution of scripts in the autoexec folder"] = {en = "Toggle auto-execution of scripts in the autoexec folder", zh = "åæ¢ autoexec æä»¶å¤¹ä¸­èæ¬çèªå¨æ§è¡", ko = "autoexec í´ëì ì¤í¬ë¦½í¸ ìë ì¤í í ê¸", ja = "autoexecãã©ã«ãåã®ã¹ã¯ãªããã®èªåå®è¡ãåãæ¿ã"},
-    ["CLICK HERE"] = {en = "CLICK HERE", zh = "ç¹å»è¿é", ko = "ì¬ê¸° í´ë¦­", ja = "ãããã¯ãªãã¯"},
-    ["Language"] = {en = "Language", zh = "è¯­è¨", ko = "ì¸ì´", ja = "è¨èª"},
-    ["Select your preferred language"] = {en = "Select your preferred language", zh = "éæ©ä½ çé¦éè¯­è¨", ko = "ì í¸íë ì¸ì´ ì í", ja = "åªåè¨èªãé¸æ"},
-    ["New tab"] = {en = "New tab", zh = "æ°æ ç­¾", ko = "ì í­", ja = "æ°ããã¿ã"},
-    ["Execute"] = {en = "Execute", zh = "æ§è¡", ko = "ì¤í", ja = "å®è¡"},
-    ["Clear"] = {en = "Clear", zh = "æ¸ç©º", ko = "ì§ì°ê¸°", ja = "ã¯ãªã¢"},
-    ["Paste"] = {en = "Paste", zh = "ç²è´´", ko = "ë¶ì¬ë£ê¸°", ja = "è²¼ãä»ã"},
-    ["Execute clipboard"] = {en = "Execute clipboard", zh = "æ§è¡åªè´´æ¿", ko = "í´ë¦½ë³´ë ì¤í", ja = "ã¯ãªãããã¼ããå®è¡"},
-    ["Save"] = {en = "Save", zh = "ä¿å­", ko = "ì ì¥", ja = "ä¿å­"},
-    ["Search for the scripts you have saved"] = {en = "Search for the scripts you have saved", zh = "æç´¢å·²ä¿å­çèæ¬", ko = "ì ì¥ë ì¤í¬ë¦½í¸ ê²ì", ja = "ä¿å­ãããã¹ã¯ãªãããæ¤ç´¢"},
-    ["Enter Details"] = {en = "Enter Details", zh = "è¾å¥è¯¦æ", ko = "ì¸ë¶ ì ë³´ ìë ¥", ja = "è©³ç´°ãå¥å"},
-    ["Complete the necessary parameters to upload your client script"] = {en = "Complete the necessary parameters to upload your client script", zh = "å¡«åå¿è¦åæ°ä»¥ä¸ä¼ å®¢æ·ç«¯èæ¬", ko = "í´ë¼ì´ì¸í¸ ì¤í¬ë¦½í¸ ìë¡ëë¥¼ ìí íìí ë§¤ê°ë³ì ìë ¥", ja = "ã¯ã©ã¤ã¢ã³ãã¹ã¯ãªãããã¢ããã­ã¼ãããããã®å¿è¦ãªãã©ã¡ã¼ã¿ãå¥å"},
-    ["Title"] = {en = "Title", zh = "æ é¢", ko = "ì ëª©", ja = "ã¿ã¤ãã«"},
-    ["Enter Your Title..."] = {en = "Enter Your Title...", zh = "è¾å¥æ é¢...", ko = "ì ëª© ìë ¥...", ja = "ã¿ã¤ãã«ãå¥å..."},
-    ["Script"] = {en = "Script", zh = "èæ¬", ko = "ì¤í¬ë¦½í¸", ja = "ã¹ã¯ãªãã"},
-    ["Enter Your Script..."] = {en = "Enter Your Script...", zh = "è¾å¥èæ¬...", ko = "ì¤í¬ë¦½í¸ ìë ¥...", ja = "ã¹ã¯ãªãããå¥å..."},
-    ["Add Script"] = {en = "Add Script", zh = "æ·»å èæ¬", ko = "ì¤í¬ë¦½í¸ ì¶ê°", ja = "ã¹ã¯ãªãããè¿½å "},
-    ["DELETE"] = {en = "DELETE", zh = "å é¤", ko = "ì­ì ", ja = "åé¤"},
-    ["EXECUTE"] = {en = "EXECUTE", zh = "æ§è¡", ko = "ì¤í", ja = "å®è¡"},
-    ["Delta UI Core loaded"] = {en = "Delta UI Core loaded", zh = "Delta UI æ ¸å¿å·²å è½½", ko = "Delta UI ì½ì´ ë¡ëë¨", ja = "Delta UI ã³ã¢ãèª­ã¿è¾¼ã¾ãã¾ãã"},
-    ["Ready"] = {en = "Ready", zh = "å°±ç»ª", ko = "ì¤ë¹ ìë£", ja = "æºåå®äº"},
-    ["Executing script..."] = {en = "Executing script...", zh = "æ­£å¨æ§è¡èæ¬...", ko = "ì¤í¬ë¦½í¸ ì¤í ì¤...", ja = "ã¹ã¯ãªãããå®è¡ä¸­..."},
-    ["Execution finished"] = {en = "Execution finished", zh = "æ§è¡å®æ", ko = "ì¤í ìë£", ja = "å®è¡å®äº"},
-    ["Editor cleared"] = {en = "Editor cleared", zh = "ç¼è¾å¨å·²æ¸ç©º", ko = "ìëí° ì§ìì§", ja = "ã¨ãã£ã¿ãã¯ãªã¢ããã¾ãã"},
-    ["Pasted from clipboard"] = {en = "Pasted from clipboard", zh = "å·²ä»åªè´´æ¿ç²è´´", ko = "í´ë¦½ë³´ëìì ë¶ì¬ë£ê¸°", ja = "ã¯ãªãããã¼ãããè²¼ãä»ãã¾ãã"},
-    ["Executing clipboard..."] = {en = "Executing clipboard...", zh = "æ­£å¨æ§è¡åªè´´æ¿...", ko = "í´ë¦½ë³´ë ì¤í ì¤...", ja = "ã¯ãªãããã¼ããå®è¡ä¸­..."},
-    ["Clipboard execution finished"] = {en = "Clipboard execution finished", zh = "åªè´´æ¿æ§è¡å®æ", ko = "í´ë¦½ë³´ë ì¤í ìë£", ja = "ã¯ãªãããã¼ãå®è¡å®äº"},
-    ["Executing saved script: "] = {en = "Executing saved script: ", zh = "æ­£å¨æ§è¡å·²ä¿å­èæ¬: ", ko = "ì ì¥ë ì¤í¬ë¦½í¸ ì¤í ì¤: ", ja = "ä¿å­ãããã¹ã¯ãªãããå®è¡ä¸­: "},
-    ["Error"] = {en = "Error", zh = "éè¯¯", ko = "ì¤ë¥", ja = "ã¨ã©ã¼"},
-    ["Server"] = {en = "Server", zh = "æå¡å¨", ko = "ìë²", ja = "ãµã¼ãã¼"},
-    ["Label"] = {en = "Label", zh = "æ ç­¾", ko = "ë¼ë²¨", ja = "ã©ãã«"},
-    ["error ä½ æ²¡æå¼å¯console"] = {en = "error Console is disabled", zh = "error ä½ æ²¡æå¼å¯æ§å¶å°", ko = "error ì½ìì´ ë¹íì±íëì´ ììµëë¤", ja = "error ã³ã³ã½ã¼ã«ãç¡å¹ã§ã"},
+    -- 基础操作
+    rejoin = {en = "Rejoin", zh = "重新加入", ko = "재접속", ja = "再参加"},
+    rejoin_desc = {en = "Rejoins your current server", zh = "重新加入当前服务器", ko = "현재 서버에 재접속", ja = "現在のサーバーに再参加"},
+    small_server = {en = "Small Server", zh = "小服务器", ko = "소규모 서버", ja = "小規模サーバー"},
+    small_server_desc = {en = "Joins a server with a low playercount", zh = "加入玩家较少的服务器", ko = "플레이어가 적은 서버 이동", ja = "プレイヤーが少ないサーバーに参加"},
+    serverhop = {en = "Serverhop", zh = "切换服务器", ko = "서버 이동", ja = "サーバー移動"},
+    serverhop_desc = {en = "Teleport to a new server", zh = "传送到新服务器", ko = "새 서버로 이동", ja = "新しいサーバーにテレポート"},
+    fps_cap = {en = "FPS Cap", zh = "帧率限制", ko = "FPS 제한", ja = "FPS制限"},
+    fps_cap_desc = {en = "Change the FPS cap for a smoother experience", zh = "调整帧率限制以获得更流畅的体验", ko = "제한 변경", ja = "よりスムーズな体験のためFPS制限を変更"},
+    icon_size = {en = "Icon Size", zh = "图标大小", ko = "아이콘 크기", ja = "アイコンサイズ"},
+    icon_size_desc = {en = "Change the floating icon's size", zh = "更改悬浮图标大小", ko = "플로팅 아이콘 크기 변경", ja = "フローティングアイコンのサイズを変更"},
+    icon_shape = {en = "Icon Shape", zh = "图标形状", ko = "아이콘 모양", ja = "アイコン形状"},
+    icon_shape_desc = {en = "Change the floating icon's shape", zh = "更改悬浮图标形状", ko = "플로팅 아이콘 모양 변경", ja = "フローティングアイコンの形状を変更"},
+    disable_robux = {en = "Disable Robux", zh = "禁用 Robux", ko = "Robux 비활성화", ja = "Robux無効化"},
+    disable_robux_desc = {en = "Block all ROBUX purchases making it impossible to lose ROBUX to scams", zh = "阻止所有 Robux 购买，防止欺诈损失", ko = "모든 Robux 구매 차단으로 사기 피해 방지", ja = "すべてのRobux購入をブロックし、詐欺による損失を防止"},
+    verify_teleports = {en = "Verify Teleports", zh = "验证传送", ko = "텔레포트 검증", ja = "テレポート検証"},
+    verify_teleports_desc = {en = "Only allow teleports to the same place id", zh = "仅允许传送到相同的 Place ID", ko = "동일한 장소 ID로만 텔레포트 허용", ja = "同じPlace IDへのテレポートのみ許可"},
+    anti_afk = {en = "Anti AFK", zh = "防挂机", ko = "AFK 방지", ja = "AFK防止"},
+    anti_afk_desc = {en = "Disable all idle timeout kicks from the source", zh = "禁用所有空闲超时踢出", ko = "모든 유휴 시간 초과 킥 비활성화", ja = "すべてのアイドルタイムアウトキックを無効化"},
+    console = {en = "Console", zh = "控制台", ko = "콘솔", ja = "コンソール"},
+    console_desc = {en = "Toggle roblox console logs in the GUI", zh = "在界面中切换 Roblox 控制台日志", ko = "GUI에서 Roblox 콘솔 로그 토글", ja = "GUIでRobloxコンソールログを切り替え"},
+    auto_execute = {en = "Auto Execute", zh = "自动执行", ko = "자동 실행", ja = "自動実行"},
+    auto_execute_desc = {en = "Toggle auto-execution of scripts in the autoexec folder", zh = "切换 autoexec 文件夹中脚本的自动执行", ko = "autoexec 폴더의 스크립트 자동 실행 토글", ja = "autoexecフォルダ内のスクリプトの自動実行を切り替え"},
+    click_here = {en = "CLICK HERE", zh = "点击这里", ko = "여기 클릭", ja = "ここをクリック"},
+    language = {en = "Language", zh = "语言", ko = "언어", ja = "言語"},
+    language_desc = {en = "Select your preferred language", zh = "选择你的首选语言", ko = "선호하는 언어 선택", ja = "優先言語を選択"},
+    new_tab = {en = "New tab", zh = "新标签", ko = "새 탭", ja = "新しいタブ"},
+    execute = {en = "Execute", zh = "执行", ko = "실행", ja = "実行"},
+    clear = {en = "Clear", zh = "清空", ko = "지우기", ja = "クリア"},
+    paste = {en = "Paste", zh = "粘贴", ko = "붙여넣기", ja = "貼り付け"},
+    execute_clipboard = {en = "Execute clipboard", zh = "执行剪贴板", ko = "클립보드 실행", ja = "クリップボードを実行"},
+    save = {en = "Save", zh = "保存", ko = "저장", ja = "保存"},
+    search_scripts = {en = "Search for the scripts you have saved", zh = "搜索已保存的脚本", ko = "저장된 스크립트 검색", ja = "保存されたスクリプトを検索"},
+    enter_details = {en = "Enter Details", zh = "输入详情", ko = "세부 정보 입력", ja = "詳細を入力"},
+    enter_details_desc = {en = "Complete the necessary parameters to upload your client script", zh = "填写必要参数以上传客户端脚本", ko = "클라이언트 스크립트 업로드를 위한 필수 매개변수를 입력하세요", ja = "クライアントスクリプトをアップロードするための必要なパラメーターを入力"},
+    title = {en = "Title", zh = "标题", ko = "제목", ja = "タイトル"},
+    title_placeholder = {en = "Enter Your Title...", zh = "输入标题...", ko = "제목을 입력하세요...", ja = "タイトルを入力..."},
+    script = {en = "Script", zh = "脚本", ko = "스크립트", ja = "スクリプト"},
+    script_placeholder = {en = "Enter Your Script...", zh = "输入脚本...", ko = "스크립트를 입력하세요...", ja = "スクリプトを入力..."},
+    add_script = {en = "Add Script", zh = "添加脚本", ko = "스크립트 추가", ja = "スクリプトを追加"},
+    delete = {en = "DELETE", zh = "删除", ko = "삭제", ja = "削除"},
+    execute_cap = {en = "EXECUTE", zh = "执行", ko = "실행", ja = "実行"},
+    core_loaded = {en = "Delta UI Core loaded", zh = "Delta UI 核心已加载", ko = "Delta UI 코어 로드됨", ja = "Delta UI コアが読み込まれました"},
+    ready = {en = "Ready", zh = "就绪", ko = "준비 완료", ja = "準備完了"},
+    executing = {en = "Executing script...", zh = "正在执行脚本...", ko = "스크립트 실행 중...", ja = "スクリプトを実行中..."},
+    execution_finished = {en = "Execution finished", zh = "执行完成", ko = "실행 완료", ja = "実行完了"},
+    editor_cleared = {en = "Editor cleared", zh = "编辑器已清空", ko = "에디터가 비워졌습니다", ja = "エディタをクリアしました"},
+    pasted = {en = "Pasted from clipboard", zh = "已从剪贴板粘贴", ko = "클립보드에서 붙여넣기", ja = "クリップボードから貼り付けました"},
+    executing_clipboard = {en = "Executing clipboard...", zh = "正在执行剪贴板...", ko = "클립보드 실행 중...", ja = "クリップボードを実行中..."},
+    clipboard_finished = {en = "Clipboard execution finished", zh = "剪贴板执行完成", ko = "클립보드 실행 완료", ja = "クリップボード実行完了"},
+    executing_saved = {en = "Executing saved script: ", zh = "正在执行已保存脚本: ", ko = "저장된 스크립트 실행 중: ", ja = "保存されたスクリプトを実行中: "},
+    error = {en = "Error", zh = "错误", ko = "오류", ja = "エラー"},
+    server = {en = "Server", zh = "服务器", ko = "서버", ja = "サーバー"},
+    label = {en = "Label", zh = "标签", ko = "라벨", ja = "ラベル"},
+    console_disabled_error = {en = "error Console is disabled", zh = "error 你没有开启控制台", ko = "error 콘솔이 비활성화되어 있습니다", ja = "error コンソールが無効です"}
 }
 
 local settingsData = {language = "en", uiRefs = {}}
+local configFile = "DeltaPlus/config.json"
+
+local function loadConfig()
+    if not isfile(configFile) then return {} end
+    local ok, content = pcall(readfile, configFile)
+    if not ok or not content then return {} end
+    local ok2, data = pcall(function() return game:GetService("HttpService"):JSONDecode(content) end)
+    if ok2 and type(data) == "table" then return data end
+    return {}
+end
+
+local function saveConfig(data)
+    if not isfolder("DeltaPlus") then makefolder("DeltaPlus") end
+    local ok, json = pcall(function() return game:GetService("HttpService"):JSONEncode(data) end)
+    if ok and json then
+        pcall(function() writefile(configFile, json) end)
+    end
+end
 
 local function t(key)
     local lang = settingsData.language or "en"
@@ -207,15 +226,14 @@ local function makeDropdown(parent, options, defaultIndex, callback)
             return
         end
         dropdownOpen = true
-        local absPos = btn.AbsolutePosition
-        local absSize = btn.AbsoluteSize
         listFrame = create("Frame", {
-            Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 4),
-            Size = UDim2.new(0, absSize.X, 0, #options * 30),
+            Position = UDim2.new(0, btn.AbsolutePosition.X, 0, btn.AbsolutePosition.Y + 36),
+            Size = UDim2.new(0, btn.AbsoluteSize.X, 0, #options * 30),
             BackgroundColor3 = theme.surfaceLight,
             BackgroundTransparency = 0.05,
             BorderSizePixel = 0,
-            ZIndex = 999
+            ZIndex = 999,
+            ClipsDescendants = false
         })
         corner(8, listFrame)
         stroke(theme.border, 1, listFrame)
@@ -248,8 +266,8 @@ local mktService = game:GetService("MarketplaceService")
 local vUser = game:GetService("VirtualUser")
 
 local row0 = makeSettingRow(t("Language"), t("Select your preferred language"), 0)
-makeDropdown(row0, {"English", "ä¸­æ", "íêµ­ì´", "æ¥æ¬èª"}, 1, function(val)
-    local langMap = {["English"] = "en", ["ä¸­æ"] = "zh", ["íêµ­ì´"] = "ko", ["æ¥æ¬èª"] = "ja"}
+makeDropdown(row0, {"English", "中文", "한국어", "日本語"}, 1, function(val)
+    local langMap = {["English"] = "en", ["中文"] = "zh", ["한국어"] = "ko", ["日本語"] = "ja"}
     settingsData.language = langMap[val] or "en"
     for _, ref in ipairs(settingsData.uiRefs) do
         if ref.tLabel and ref.tLabel.Parent then
@@ -383,6 +401,9 @@ local _, getAntiAfkState = makeToggle(row9, false, function(state)
             settingsData.afkConnection = nil
         end
     end
+    local cfg = loadConfig()
+    cfg.antiAfk = state
+    saveConfig(cfg)
 end)
 row9.Parent = settingsScroll
 
@@ -394,6 +415,9 @@ local _, getConsoleState = makeToggle(row10, true, function(state)
     else
         consolePage.Visible = false
     end
+    local cfg = loadConfig()
+    cfg.console = state
+    saveConfig(cfg)
 end)
 row10.Parent = settingsScroll
 
@@ -417,39 +441,73 @@ local _, getAutoExecState = makeToggle(row11, false, function(state)
             end
         end
     end
+    local cfg = loadConfig()
+    cfg.autoExec = state
+    saveConfig(cfg)
 end)
 row11.Parent = settingsScroll
 
-local allTimeLabels = {timeLabel}
-local allPingLabels = {pingLabel}
-local allFpsLabels = {fpsLabel}
 local consoleEnabled = true
+local maxLogEntries = 500
+local logEntryCount = 0
+local pendingLogs = {}
+local logProcessing = false
+
 local function AddLog(message, level)
     if not consoleEnabled then
-        warn(t("error ä½ æ²¡æå¼å¯console"))
         return
     end
-    local color = theme.text
-    if level == "error" then color = theme.red
-    elseif level == "warn" then color = theme.warn
-    elseif level == "info" then color = theme.textDim end
-    local entry = create("TextLabel", {
-        Size = UDim2.new(1, 0, 0, 18),
-        BackgroundTransparency = 1,
-        Text = tostring(message),
-        TextColor3 = color,
-        TextSize = 11,
-        Font = Enum.Font.Code,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Center,
-        ZIndex = 4
-    })
-    entry.Parent = consoleScroll
-    task.wait()
-    consoleScroll.CanvasPosition = Vector2.new(0, consoleScroll.AbsoluteCanvasSize.Y)
+    table.insert(pendingLogs, {msg = tostring(message), lvl = level})
+    if logProcessing then return end
+    logProcessing = true
+    task.defer(function()
+        while #pendingLogs > 0 do
+            local batch = {}
+            for i = 1, math.min(10, #pendingLogs) do
+                batch[i] = table.remove(pendingLogs, 1)
+            end
+            for _, log in ipairs(batch) do
+                local color = theme.text
+                if log.lvl == "error" then color = theme.red
+                elseif log.lvl == "warn" then color = theme.warn
+                elseif log.lvl == "info" then color = theme.textDim end
+                local entry = create("TextLabel", {
+                    Size = UDim2.new(1, 0, 0, 18),
+                    BackgroundTransparency = 1,
+                    Text = log.msg,
+                    TextColor3 = color,
+                    TextSize = 11,
+                    Font = Enum.Font.Code,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    ZIndex = 4
+                })
+                entry.Parent = consoleScroll
+                logEntryCount = logEntryCount + 1
+                if logEntryCount > maxLogEntries then
+                    local first = consoleScroll:FindFirstChildWhichIsA("TextLabel")
+                    if first then
+                        first:Destroy()
+                        logEntryCount = logEntryCount - 1
+                    end
+                end
+            end
+            consoleScroll.CanvasPosition = Vector2.new(0, consoleScroll.AbsoluteCanvasSize.Y)
+            if #pendingLogs > 0 then
+                task.wait(0.05)
+            end
+        end
+        logProcessing = false
+    end)
 end
-local saveFolder = "DeltaSavedScripts"
+
+
+
+local saveFolder = "DeltaPlus/DeltaSavedScripts"
 local function ensureFolder()
+    if not isfolder("DeltaPlus") then
+        makefolder("DeltaPlus")
+    end
     if not isfolder(saveFolder) then
         makefolder(saveFolder)
     end
@@ -540,7 +598,7 @@ local btnXPositions = {4, 44, 84, 124, 164}
 for i, name in ipairs(navNames) do
     local btn = create("TextButton", {
         Size = UDim2.new(0, 32, 0, 32),
-        Position = UDim2.new(0, btnXPositions[i], 0, 4),
+        Position = UDim2.new(0, btnXPositions[i], 0, 3),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Text = "",
@@ -621,6 +679,12 @@ local timeIcon = GetIcon("clock", UDim2.new(0, 10, 0, 10), theme.textDim)
 if timeIcon then timeIcon.Position = UDim2.new(0, 5, 0.5, -5); timeIcon.Parent = timePill end
 local timeLabel = create("TextLabel", {Position = UDim2.new(0, 18, 0, 0), Size = UDim2.new(1, -20, 1, 0), BackgroundTransparency = 1, Text = "12:00 PM", TextColor3 = theme.text, TextSize = 10, Font = Enum.Font.SourceSans, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 7})
 timeLabel.Parent = timePill
+local allTimeLabels = {timeLabel}
+local allPingLabels = {pingLabel}
+local allFpsLabels = {fpsLabel}
+
+
+
 timePill.Parent = rightStats
 local labelPill = create("Frame", {Size = UDim2.new(0, 55, 0, 22), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, ZIndex = 6})
 corner(11, labelPill)
@@ -785,7 +849,7 @@ local codeBox = create("TextBox", {
     Position = UDim2.new(0, 40, 0, 40),
     Size = UDim2.new(1, -48, 1, -84),
     BackgroundTransparency = 1,
-    Text = "--[[\n    Thank you for using Delta <3\n    Get Delta only at deltaexploits.gg!\n    TELEGRAM: t.me/deltadyn\n    DISCORD: discord.gg/deltax\n    ONLY deltaexploits.gg IS REAL!\n]]",
+    Text = "--[[\n    Thank you for using Delta <3\n    Get Delta only at deltaexploits.gg!\n    TELEGRAM: t.me/deltadyn\n    DISCORD: discord.gg/deltax\n    ONLY deltaexploits.gg IS REAL!\n]]\n",
     TextColor3 = theme.text,
     TextSize = 12,
     Font = Enum.Font.Code,
@@ -1209,13 +1273,20 @@ local function refreshScriptList(filter)
                         AddLog("[" .. t("Error") .. "] " .. tostring(err2), "error")
                         return
                     end
-                    fn2()
+                    local ok2, runtimeErr2 = pcall(fn2)
+                    if not ok2 then
+                        AddLog("[" .. t("Error") .. "] " .. tostring(runtimeErr2), "error")
+                        return
+                    end
                     AddLog("> " .. t("Execution finished"), "info")
                 end
             end)
             item.Parent = scriptListScroll
         end
     end
+    task.defer(function()
+        scriptListScroll.CanvasSize = UDim2.new(0, 0, 0, scriptListLayout.AbsoluteContentSize.Y + 8)
+    end)
 end
 updateBtn.MouseButton1Click:Connect(function()
     modalOverlay.Visible = true
@@ -1249,7 +1320,7 @@ addScriptBtn.MouseButton1Click:Connect(function()
     if fileName == "" then fileName = "untitled" end
     writefile(saveFolder .. "/" .. fileName .. ".lua", scriptContent)
     modalOverlay.Visible = false
-    refreshScriptList(searchInput.Text)
+    refreshScriptList("")
 end)
 searchInput:GetPropertyChangedSignal("Text"):Connect(function()
     refreshScriptList(searchInput.Text)
@@ -1277,41 +1348,53 @@ for _, name in ipairs(navNames) do
 end
 task.spawn(function()
     while true do
-        local timeTable = os.date("*t")
-        local suffix = timeTable.hour >= 12 and "PM" or "AM"
-        local hour = timeTable.hour % 12
-        if hour == 0 then hour = 12 end
-        local min = string.format("%02d", timeTable.min)
-        local timeStr = hour .. ":" .. min .. " " .. suffix
-        for _, label in ipairs(allTimeLabels) do
-            label.Text = timeStr
+        local ok, timeTable = pcall(function() return os.date("*t") end)
+        if ok and timeTable then
+            local suffix = timeTable.hour >= 12 and "PM" or "AM"
+            local hour = timeTable.hour % 12
+            if hour == 0 then hour = 12 end
+            local min = string.format("%02d", timeTable.min)
+            local timeStr = hour .. ":" .. min .. " " .. suffix
+            for _, label in ipairs(allTimeLabels) do
+                if label and label.Parent then
+                    label.Text = timeStr
+                end
+            end
         end
         task.wait(60)
     end
 end)
-task.spawn(function()
-    local lastUpdate = 0
-    local frameCount = 0
-    v5.RenderStepped:Connect(function()
-        frameCount = frameCount + 1
-        local now = tick()
-        if now - lastUpdate >= 1 then
-            local fpsText = frameCount .. " FPS"
-            local pingText = "0 ms"
-            local ping = v6.Network.ServerStatsItem["Data Ping"]
-            if ping then
-                pingText = math.floor(ping:GetValue()) .. " ms"
+
+local lastUpdate = 0
+local frameCount = 0
+v5.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local now = tick()
+    if now - lastUpdate >= 1 then
+        local fpsText = frameCount .. " FPS"
+        local pingText = "0 ms"
+        local ok, ping = pcall(function()
+            return v6.Network.ServerStatsItem["Data Ping"]
+        end)
+        if ok and ping then
+            local ok2, val = pcall(function() return ping:GetValue() end)
+            if ok2 and val then
+                pingText = math.floor(val) .. " ms"
             end
-            for _, label in ipairs(allPingLabels) do
+        end
+        for _, label in ipairs(allPingLabels) do
+            if label and label.Parent then
                 label.Text = pingText
             end
-            for _, label in ipairs(allFpsLabels) do
+        end
+        for _, label in ipairs(allFpsLabels) do
+            if label and label.Parent then
                 label.Text = fpsText
             end
-            frameCount = 0
-            lastUpdate = now
         end
-    end)
+        frameCount = 0
+        lastUpdate = now
+    end
 end)
 execBtn.MouseButton1Click:Connect(function()
     cleanupOldUI()
@@ -1323,7 +1406,11 @@ execBtn.MouseButton1Click:Connect(function()
             AddLog("[" .. t("Error") .. "] " .. tostring(compileErr), "error")
             return
         end
-        fn()
+        local ok, runtimeErr = pcall(fn)
+        if not ok then
+            AddLog("[" .. t("Error") .. "] " .. tostring(runtimeErr), "error")
+            return
+        end
         AddLog("> " .. t("Execution finished"), "info")
     end
 end)
@@ -1350,7 +1437,11 @@ execClipBtn.MouseButton1Click:Connect(function()
             AddLog("[" .. t("Error") .. "] " .. tostring(compileErr), "error")
             return
         end
-        fn()
+        local ok, runtimeErr = pcall(fn)
+        if not ok then
+            AddLog("[" .. t("Error") .. "] " .. tostring(runtimeErr), "error")
+            return
+        end
         AddLog("> " .. t("Clipboard execution finished"), "info")
     end
 end)
@@ -1359,19 +1450,64 @@ v2.InputBegan:Connect(function(input, gpe)
         main.Visible = not main.Visible
     end
 end)
+local function applyConfig()
+    local cfg = loadConfig()
+    if cfg.language then
+        settingsData.language = cfg.language
+    end
+    if cfg.fpsCap and setfpscap then
+        local cap = cfg.fpsCap == "30 FPS" and 30 or cfg.fpsCap == "60 FPS" and 60 or cfg.fpsCap == "120 FPS" and 120 or cfg.fpsCap == "240 FPS" and 240 or cfg.fpsCap == "360 FPS" and 360 or 0
+        setfpscap(cap)
+    end
+    if cfg.iconSize then
+        local sz = cfg.iconSize == "Small" and 25 or cfg.iconSize == "Medium" and 35 or 45
+        orbFrame.Size = UDim2.new(0, sz, 0, sz)
+    end
+    if cfg.iconShape then
+        for _, c in pairs(orbFrame:GetChildren()) do
+            if c:IsA("UICorner") then
+                c:Destroy()
+            end
+        end
+        if cfg.iconShape == "Circle" then
+            local sz = orbFrame.Size.X.Offset
+            corner(sz/2, orbFrame)
+        end
+    end
+    if cfg.disableRobux then
+        getRobuxState()
+    end
+    if cfg.verifyTeleports then
+        getVerifyState()
+    end
+    if cfg.antiAfk then
+        getAntiAfkState()
+    end
+    if cfg.console == false then
+        getConsoleState()
+    end
+    if cfg.autoExec then
+        getAutoExecState()
+    end
+end
+applyConfig()
+
 cleanupOldUI()
-AddLog("Delta UI Core loaded", "info")
-AddLog("Ready", "info")
-local recentErrors = {}
-game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
-    local msg = tostring(message)
+local logService = game:GetService("LogService")
+local lastLogTime = 0
+local logDedup = {}
+logService.MessageOut:Connect(function(msg, msgtype)
     local now = tick()
-    if recentErrors[msg] and (now - recentErrors[msg].time) < 3 then
-        recentErrors[msg].count = recentErrors[msg].count + 1
+    local key = tostring(msg)
+    if logDedup[key] and (now - logDedup[key]) < 2 then
         return
     end
-    recentErrors[msg] = {time = now, count = 1}
-    if not msg or msg == "" then return end
-    if msg:find("is not a valid member of") then return end
-    AddLog("[" .. t("Server") .. "] " .. msg, "error")
+    logDedup[key] = now
+    local level = "info"
+    if msgtype == Enum.MessageType.MessageWarning then level = "warn"
+    elseif msgtype == Enum.MessageType.MessageError then level = "error" end
+    AddLog(msg, level)
 end)
+
+AddLog("Delta UI Core loaded", "info")
+AddLog("Ready", "info")
