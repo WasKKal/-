@@ -132,6 +132,13 @@ local function t(key)
     return key
 end
 
+local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
+local settingsScroll = create("ScrollingFrame", {Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(1, -24, 1, -24), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3})
+settingsScroll.Parent = settingsPage
+local settingsList = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)})
+settingsList.Parent = settingsScroll
+
 local function makeSettingRow(title, desc, layoutOrder)
     local row = create("Frame", {Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = theme.surface, BackgroundTransparency = 0.15, BorderSizePixel = 0, LayoutOrder = layoutOrder, ZIndex = 4})
     corner(12, row)
@@ -633,6 +640,8 @@ local contentFrame = create("Frame", {
 })
 corner(12, contentFrame)
 contentFrame.Parent = wrapperFrame
+cloudPage.Parent = contentFrame
+settingsPage.Parent = contentFrame
 local rightToggleBar = create("TextButton", {
     AnchorPoint = Vector2.new(1, 0),
     Position = UDim2.new(1, -9, 0, 78),
@@ -1110,19 +1119,11 @@ local addScriptText = create("TextLabel", {
     ZIndex = 203
 })
 addScriptText.Parent = addScriptBtn
-local cloudPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
-cloudPage.Parent = contentFrame
-local settingsPage = create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 2})
-settingsPage.Parent = contentFrame
 pages["house"] = editorPage
 pages["terminal"] = consolePage
 pages["gamepad-2"] = gamepadPage
 pages["cloud"] = cloudPage
 pages["settings"] = settingsPage
-local settingsScroll = create("ScrollingFrame", {Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(1, -24, 1, -24), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = theme.textDim, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3})
-settingsScroll.Parent = settingsPage
-local settingsList = create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)})
-settingsList.Parent = settingsScroll
 local function cleanupOldUI()
     for _, child in pairs(v3:GetChildren()) do
         if #child.Name > 20 then
