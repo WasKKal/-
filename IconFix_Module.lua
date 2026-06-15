@@ -21,23 +21,27 @@ local function applyFix()
         return
     end
 
+    local cacheFolder = "DeltaUI/Cache"
+    local function ensureCacheFolder()
+        if not isfolder("DeltaUI") then makefolder("DeltaUI") end
+        if not isfolder(cacheFolder) then makefolder(cacheFolder) end
+    end
+
     local fixedFunc = function(url, name)
         if not url or url == "" then return nil end
-        local cacheDir = "DeltaUI/Cache"
-        if not isfolder("DeltaUI") then makefolder("DeltaUI") end
-        if not isfolder(cacheDir) then makefolder(cacheDir) end
+        ensureCacheFolder()
         local safeName = name:gsub("[^%w%s_-]", ""):gsub("%s+", "_")
         if safeName == "" then safeName = "icon" end
-        local fp = cacheDir .. "/" .. safeName .. ".png"
+        local fp = cacheFolder .. "/" .. safeName .. ".png"
         if isfile(fp) then
-            return readfile(fp)
+            return url
         end
         local ok, data = pcall(function()
             return game:HttpGet(url)
         end)
         if ok and data and data ~= "" then
             writefile(fp, data)
-            return data
+            return url
         end
         return nil
     end
@@ -55,21 +59,4 @@ local function applyFix()
 end
 
 applyFix()
-
--- 同时修复 makeModuleCard 中的 icon 调用保护
-if getgc then
-    for _, obj in pairs(getgc()) do
-        if type(obj) == "function" then
-            local info = debug.getinfo(obj)
-            if info and info.name == "makeModuleCard" then
-                if replaceclosure then
-                    -- 无法安全替换 makeModuleCard（太复杂），但 getCachedIcon 修复已足够
-                    print("[IconFix] getCachedIcon 修复已覆盖 makeModuleCard 的 icon 获取")
-                end
-                break
-            end
-        end
-    end
-end
-
 print("[IconFix] 模块执行完毕")
