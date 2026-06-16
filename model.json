@@ -14,7 +14,7 @@
       "Type": "Script",
       "Desc": "汉化版终极开发者调试工具",
       "Url": "https://raw.githubusercontent.com/JsYb666/Developer-Tool/refs/heads/main/Dex-Explorer-TX-Fixed.lua",
-      "Visions": "1.0.0",
+      "Version": "1.0.0",
       "Author": "TX",
       "Servers": [
         "All"
@@ -25,7 +25,7 @@
       "Type": "Script",
       "Desc": "支持72个服务器 主群786284990",
       "Url": "https://cdn.jsdelivr.net/gh/WasKKal/OnlyJumpToOther@main/loader.lua",
-      "Visions": "1.0.0",
+      "Version": "1.0.0",
       "Author": "蛙QwQ",
       "Servers": [
         "Unknown"
@@ -36,7 +36,7 @@
       "Type": "Script",
       "Desc": "支持72个服务器 主群786284990",
       "Url": "https://raw.githubusercontent.com/WasKKal/OnlyJumpToOther/main/loader.lua",
-      "Visions": "1.0.0",
+      "Version": "1.0.0",
       "Author": "蛙QwQ",
       "Servers": [
         "Unknown"
@@ -47,7 +47,7 @@
       "Type": "Script",
       "Desc": "国内高质量免费脚本 支持113个服务器 主群744830231",
       "Url": "https://raw.githubusercontent.com/ShenJiaoBen/ScriptLoader/refs/heads/main/Linni_FreeLoader.lua",
-      "Visions": "1.0.0",
+      "Version": "1.0.0",
       "Author": "Linni",
       "Icon": "https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/8FFB3162-41A3-4F72-9830-5E7BFB6B7B6C.jpeg",
       "Servers": [
@@ -59,7 +59,7 @@
       "Type": "Script",
       "Desc": "国内老牌通用脚本 主群711757444",
       "Url": "https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua",
-      "Visions": "1.0.0",
+      "Version": "1.0.0",
       "Author": "小皮",
       "Servers": [
         "All"
@@ -70,7 +70,7 @@
       "Type": "Script",
       "Desc": "高质低价付费脚本 主群992958518 安装后可以点击Getkey加入主群",
       "Url": "https://api.jnkie.com/api/v1/luascripts/public/2c1be869efc49339ec3caaa2f517245b5ebd56a80bc83016792a31671b6cee58/download",
-      "Visions": "1.0.0",
+      "Version": "1.0.0",
       "Author": "小西",
       "Icon": "https://raw.githubusercontent.com/xiaoxi9008/Server./refs/heads/main/mmexport1781477677305.png",
       "Servers": [
