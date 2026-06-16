@@ -1,22 +1,24 @@
 local function applyFix()
-    if not getgc then
-        warn("[NotificationFix] 当前执行器不支持 getgc")
-        return
-    end
+    local targetFunc = _G.__DeltaUI_ShowNotification
 
-    local targetFunc = nil
-    for _, obj in pairs(getgc()) do
-        if type(obj) == "function" then
-            local info = debug.getinfo(obj)
-            if info and info.name == "ShowNotification" then
-                targetFunc = obj
-                break
+    if not targetFunc then
+        if not getgc then
+            warn("[NotificationFix] 当前执行器不支持 getgc，且未找到全局引用")
+            return
+        end
+        for _, obj in pairs(getgc()) do
+            if type(obj) == "function" then
+                local info = debug.getinfo(obj)
+                if info and info.name == "ShowNotification" then
+                    targetFunc = obj
+                    break
+                end
             end
         end
     end
 
     if not targetFunc then
-        warn("[NotificationFix] 未找到 ShowNotification 函数")
+        warn("[NotificationFix] 未找到 ShowNotification 函数，请确保主 UI 已加载")
         return
     end
 
