@@ -2,14 +2,6 @@
   "UIVersion": "1.0.2",
   "modules": [
     {
-      "name": "DeltaUI-图标修复补丁",
-      "Type": "Patch",
-      "Desc": "修复图标缓存在本地时 为被加载问题",
-      "Url": "https://raw.githubusercontent.com/WasKKal/-/refs/heads/main/Model1.lua",
-      "Version": "1.0.0",
-      "Author": "Was"
-    },
-    {
       "name": "Dex",
       "Type": "Script",
       "Desc": "汉化版终极开发者调试工具",
