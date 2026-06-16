@@ -1,157 +1,104 @@
-return function(core)
-    local create = core.create
-    local corner = core.corner
-    local stroke = core.stroke
-    local theme = core.theme
-    local t = core.t
-    local GetIcon = core.GetIcon
-    local contentFrame = core.contentFrame
-    local settingsScroll = core.settingsScroll
-    local makeSettingRow = core.makeSettingRow
-    local makeToggle = core.makeToggle
-    local makeDropdown = core.makeDropdown
-    local makeActionButton = core.makeActionButton
-    local AddLog = core.AddLog
-    local saveConfig = core.saveConfig
-    local loadConfig = core.loadConfig
-    local registerTranslation = core.registerTranslation
+local function applyFix()
+    if not getgc then
+        warn("[NotificationFix] 当前执行器不支持 getgc")
+        return
+    end
 
-    -- 注册翻译条目（仅当主 UI 中不存在时才会插入）
-    registerTranslation("custom_speed", {
-        en = "Super Speed",
-        zh = "超级速度",
-        ko = "초고속",
-        ja = "スーパースピード"
-    })
-    registerTranslation("custom_speed_desc", {
-        en = "Multiply your walk speed by 2x",
-        zh = "将行走速度乘以 2 倍",
-        ko = "이동 속도를 2배로 증가",
-        ja = "歩行速度を2倍にする"
-    })
-    registerTranslation("custom_jump", {
-        en = "Super Jump",
-        zh = "超级跳跃",
-        ko = "초고점프",
-        ja = "スーパージャンプ"
-    })
-    registerTranslation("custom_jump_desc", {
-        en = "Multiply your jump power by 3x",
-        zh = "将跳跃力乘以 3 倍",
-        ko = "점프력을 3배로 증가",
-        ja = "ジャンプ力を3倍にする"
-    })
-    registerTranslation("custom_mode", {
-        en = "Movement Mode",
-        zh = "移动模式",
-        ko = "이동 모드",
-        ja = "移動モード"
-    })
-    registerTranslation("custom_mode_desc", {
-        en = "Select preferred movement enhancement mode",
-        zh = "选择首选的移动增强模式",
-        ko = "선호하는 이동 강화 모드 선택",
-        ja = "優先移動強化モードを選択"
-    })
-
-    local v7 = game:GetService("Players").LocalPlayer
-    local v5 = game:GetService("RunService")
-
-    local speedEnabled = false
-    local jumpEnabled = false
-    local speedConnection = nil
-    local jumpConnection = nil
-
-    local function applySpeed(char)
-        if speedConnection then
-            speedConnection:Disconnect()
-        end
-        speedConnection = v5.RenderStepped:Connect(function()
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.WalkSpeed = 32
+    local targetFunc = nil
+    for _, obj in pairs(getgc()) do
+        if type(obj) == "function" then
+            local info = debug.getinfo(obj)
+            if info and info.name == "ShowNotification" then
+                targetFunc = obj
+                break
             end
+        end
+    end
+
+    if not targetFunc then
+        warn("[NotificationFix] 未找到 ShowNotification 函数")
+        return
+    end
+
+    local fixedFunc = function(message, duration, clickCallback)
+        duration = duration or 1
+        local notificationQueue = {}
+        local notificationActive = false
+        table.insert(notificationQueue, {msg = message, dur = duration, click = clickCallback})
+        if notificationActive then return end
+        task.spawn(function()
+            while #notificationQueue > 0 do
+                notificationActive = true
+                local notif = table.remove(notificationQueue, 1)
+                local notifFrame = Instance.new("Frame")
+                notifFrame.AnchorPoint = Vector2.new(0.5, 0)
+                notifFrame.Position = UDim2.new(0.5, 0, 0, -60)
+                notifFrame.Size = UDim2.new(0, 0, 0, 40)
+                notifFrame.BackgroundColor3 = Color3.fromRGB(30, 34, 44)
+                notifFrame.BackgroundTransparency = 0.1
+                notifFrame.BorderSizePixel = 0
+                notifFrame.ZIndex = 500
+                notifFrame.Active = notif.click and true or false
+                notifFrame.ClipsDescendants = true
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = UDim.new(0, 10)
+                corner.Parent = notifFrame
+                local stroke = Instance.new("UIStroke")
+                stroke.Color = Color3.fromRGB(50, 55, 70)
+                stroke.Thickness = 1
+                stroke.Transparency = 0.4
+                stroke.Parent = notifFrame
+                notifFrame.Parent = game:GetService("CoreGui")
+                local notifText = Instance.new("TextLabel")
+                notifText.Size = UDim2.new(1, 0, 1, -4)
+                notifText.Position = UDim2.new(0, 0, 0, 0)
+                notifText.BackgroundTransparency = 1
+                notifText.Text = notif.msg
+                notifText.TextColor3 = Color3.fromRGB(230, 232, 240)
+                notifText.TextSize = 12
+                notifText.Font = Enum.Font.SourceSansBold
+                notifText.TextXAlignment = Enum.TextXAlignment.Center
+                notifText.TextYAlignment = Enum.TextYAlignment.Center
+                notifText.ZIndex = 501
+                notifText.Parent = notifFrame
+                local notifProgress = Instance.new("Frame")
+                notifProgress.AnchorPoint = Vector2.new(0, 1)
+                notifProgress.Position = UDim2.new(0, 0, 1, 0)
+                notifProgress.Size = UDim2.new(1, 0, 0, 3)
+                notifProgress.BackgroundColor3 = Color3.fromRGB(59, 130, 246)
+                notifProgress.BackgroundTransparency = 0.3
+                notifProgress.BorderSizePixel = 0
+                notifProgress.ZIndex = 502
+                local pCorner = Instance.new("UICorner")
+                pCorner.CornerRadius = UDim.new(0, 2)
+                pCorner.Parent = notifProgress
+                notifProgress.Parent = notifFrame
+                game:GetService("TweenService"):Create(notifFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0, 12)}):Play()
+                game:GetService("TweenService"):Create(notifFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, math.min(400, notifText.TextBounds.X + 40), 0, 40)}):Play()
+                task.wait(0.35)
+                game:GetService("TweenService"):Create(notifProgress, TweenInfo.new(notif.dur, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 3)}):Play()
+                task.wait(notif.dur)
+                game:GetService("TweenService"):Create(notifFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 0, -60)}):Play()
+                game:GetService("TweenService"):Create(notifFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+                game:GetService("TweenService"):Create(notifText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+                game:GetService("TweenService"):Create(notifProgress, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+                task.wait(0.3)
+                notifFrame:Destroy()
+            end
+            notificationActive = false
         end)
     end
 
-    local function applyJump(char)
-        if jumpConnection then
-            jumpConnection:Disconnect()
-        end
-        jumpConnection = v5.RenderStepped:Connect(function()
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.JumpPower = 150
-            end
-        end)
+    if replaceclosure then
+        replaceclosure(targetFunc, fixedFunc)
+        print("[NotificationFix] 已通过 replaceclosure 修复")
+    elseif hookfunction then
+        hookfunction(targetFunc, fixedFunc)
+        print("[NotificationFix] 已通过 hookfunction 修复")
+    else
+        warn("[NotificationFix] 当前执行器不支持 replaceclosure/hookfunction")
     end
-
-    if settingsScroll then
-        local speedRow = makeSettingRow("custom_speed", "custom_speed_desc", 18)
-        local _, getSpeedState = makeToggle(speedRow, false, function(state)
-            speedEnabled = state
-            if state then
-                local char = v7.Character
-                if char then
-                    applySpeed(char)
-                end
-                AddLog("[Super Speed] Enabled", "info")
-            else
-                if speedConnection then
-                    speedConnection:Disconnect()
-                    speedConnection = nil
-                end
-                local char = v7.Character
-                if char then
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        hum.WalkSpeed = 16
-                    end
-                end
-                AddLog("[Super Speed] Disabled", "info")
-            end
-        end, "custom_speed")
-        speedRow.Parent = settingsScroll
-
-        local jumpRow = makeSettingRow("custom_jump", "custom_jump_desc", 19)
-        local _, getJumpState = makeToggle(jumpRow, false, function(state)
-            jumpEnabled = state
-            if state then
-                local char = v7.Character
-                if char then
-                    applyJump(char)
-                end
-                AddLog("[Super Jump] Enabled", "info")
-            else
-                if jumpConnection then
-                    jumpConnection:Disconnect()
-                    jumpConnection = nil
-                end
-                local char = v7.Character
-                if char then
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        hum.JumpPower = 50
-                    end
-                end
-                AddLog("[Super Jump] Disabled", "info")
-            end
-        end, "custom_jump")
-        jumpRow.Parent = settingsScroll
-
-        local modeRow = makeSettingRow("custom_mode", "custom_mode_desc", 20)
-        makeDropdown(modeRow, {"Balanced", "Aggressive", "Stealth"}, 1, function(val)
-            AddLog("[Movement Mode] Set to " .. val, "info")
-        end, "custom_mode")
-        modeRow.Parent = settingsScroll
-    end
-
-    v7.CharacterAdded:Connect(function(char)
-        if speedEnabled then
-            applySpeed(char)
-        end
-        if jumpEnabled then
-            applyJump(char)
-        end
-    end)
 end
+
+applyFix()
+print("[NotificationFix] 补丁执行完毕")
