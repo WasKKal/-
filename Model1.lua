@@ -47,7 +47,7 @@ modalCard.Size = UDim2.new(0, 340, 0, 340)
 
 for _, child in pairs(modalCard:GetChildren()) do
     if child:IsA("Frame") and child.Position.Y.Offset == 164 then
-        child.Size = UDim2.new(1, -40, 0, 150)
+        child.Size = UDim2.new(1, -40, 0, 110)
     end
 end
 
@@ -83,4 +83,30 @@ for _, child in pairs(modalCard:GetChildren()) do
     end
 end
 
-_G.__DeltaUI_AddLog("[Patch] Save dialog patched: removed servers input, reduced height", "info")
+if _G.__DeltaUI_refreshScriptList then
+    local oldRefresh = _G.__DeltaUI_refreshScriptList
+    _G.__DeltaUI_refreshScriptList = function(filter)
+        local saveFolder = _G.__DeltaUI_storeScriptFolder
+        local files = listfiles(saveFolder) or {}
+        if files then
+            for _, filePath in ipairs(files) do
+                local metaPath = filePath:gsub("%.lua$", ".meta.json")
+                if isfile(metaPath) then
+                    local metaTxt = readfile(metaPath)
+                    if metaTxt then
+                        local ok, meta = pcall(function()
+                            return game:GetService("HttpService"):JSONDecode(metaTxt)
+                        end)
+                        if not ok then
+                            warn("[Patch] Removed corrupted meta.json: " .. metaPath)
+                            delfile(metaPath)
+                        end
+                    end
+                end
+            end
+        end
+        return oldRefresh(filter)
+    end
+end
+
+_G.__DeltaUI_AddLog("[Patch] Save dialog patched: removed servers input, fixed JSON parse, reduced height", "info")
