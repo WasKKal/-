@@ -2,9 +2,9 @@
   "UIVersion": "1.0.3",
   "modules": [
     {
-            "name": "脚本保存补丁",
+            "name": "脚本保存补丁[新]",
             "Author": "Was",
-            "Version": "1.0.0",
+            "Version": "1.1.0",
             "Desc": "修复json编译失败导致报错问题",
             "Type": "Patch",
             "Url": "https://raw.githubusercontent.com/WasKKal/-/main/Model1.lua",
