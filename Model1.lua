@@ -13,6 +13,19 @@ local stroke = function(color, thickness, parent)
 end
 
 local screenGui = _G.__DeltaUI_screenGui
+if not screenGui then
+    for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
+        if gui:IsA("ScreenGui") and gui.DisplayOrder == 999999 then
+            screenGui = gui
+            break
+        end
+    end
+end
+if not screenGui then
+    warn("[Patch] screenGui not found, UI may not be loaded yet")
+    return
+end
+
 local modalOverlay = nil
 local modalCard = nil
 
@@ -108,5 +121,25 @@ if _G.__DeltaUI_refreshScriptList then
         return oldRefresh(filter)
     end
 end
+
+task.spawn(function()
+    while true do
+        task.wait(3)
+        local folder = "DeltaUI/Script"
+        if isfolder(folder) then
+            local files = listfiles(folder) or {}
+            for _, fp in ipairs(files) do
+                if fp:match("%.meta%.json$") then
+                    local ok = pcall(function()
+                        delfile(fp)
+                    end)
+                    if ok then
+                        warn("[Patch] Auto-deleted corrupted meta: " .. fp)
+                    end
+                end
+            end
+        end
+    end
+end)
 
 _G.__DeltaUI_AddLog("[Patch] Save dialog patched: removed servers input, fixed JSON parse, reduced height", "info")
