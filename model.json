@@ -35,7 +35,7 @@
       ]
     },
     {
-      "name": "无限产量",
+      "name": "Infinite Yield",
       "Type": "Script",
       "Desc": "多功能管理员面版",
       "Url": "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
