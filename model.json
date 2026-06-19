@@ -24,6 +24,29 @@
       ]
     },
     {
+      "name": "RemoteSpy",
+      "Type": "Script",
+      "Desc": "remote捕获工具",
+      "Url": "https://github.com/infyiff/backup/raw/refs/heads/main/SimpleSpyV3/main.lua",
+      "Version": "1.0.0",
+      "Author": "Infyiff",
+      "Servers": [
+        "All"
+      ]
+    },
+    {
+      "name": "无限产量",
+      "Type": "Script",
+      "Desc": "多功能管理员面版",
+      "Url": "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
+      "Version": "1.0.0",
+      "Author": "Infyiff",
+      "Icon": "https://github.com/WasKKal/-/raw/refs/heads/main/IMG_3164.jpeg"
+      "Servers": [
+        "All"
+      ]
+    },
+    {
       "name": "TrashHub-CDNLink",
       "Type": "Script",
       "Desc": "支持72个服务器 主群786284990",
