@@ -1,17 +1,6 @@
 {
-  "UIVersion": "1.0.3",
+  "UIVersion": "1.0.4",
   "modules": [
-    {
-            "name": "脚本保存补丁",
-            "Author": "Was",
-            "Version": "1.2.0",
-            "Desc": "修复json编译失败导致报错问题",
-            "Type": "Patch",
-            "Url": "https://raw.githubusercontent.com/WasKKal/-/main/Model1.lua",
-            "Servers": [
-                "all"
-            ]
-    },
     {
       "name": "Dex",
       "Type": "Script",
