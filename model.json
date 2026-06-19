@@ -2,7 +2,7 @@
   "UIVersion": "1.0.3",
   "modules": [
     {
-            "name": "脚本保存补丁[新]",
+            "name": "脚本保存补丁",
             "Author": "Was",
             "Version": "1.2.0",
             "Desc": "修复json编译失败导致报错问题",
@@ -11,7 +11,7 @@
             "Servers": [
                 "all"
             ]
-        },
+    },
     {
       "name": "Dex",
       "Type": "Script",
@@ -30,6 +30,7 @@
       "Url": "https://cdn.jsdelivr.net/gh/WasKKal/OnlyJumpToOther@main/loader.lua",
       "Version": "1.0.0",
       "Author": "蛙QwQ",
+      "Icon": "https://github.com/WasKKal/-/raw/refs/heads/main/IMG_2981.jpeg",
       "Servers": [
         "后巷",
         "割草模拟器",
@@ -112,6 +113,7 @@
       "Url": "https://raw.githubusercontent.com/WasKKal/OnlyJumpToOther/main/loader.lua",
       "Version": "1.0.0",
       "Author": "蛙QwQ",
+      "Icon": "https://github.com/WasKKal/-/raw/refs/heads/main/IMG_2981.jpeg",
       "Servers": [
         "后巷",
         "割草模拟器",
