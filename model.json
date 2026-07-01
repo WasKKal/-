@@ -3,7 +3,7 @@
   "modules": [
     {
       "name": "Delta美化停止维护通知",
-      "Type": "UIUpdate",
+      "Type": "Patch",
       "Desc": "Delta美化将在下个版本停止运营,因为DeltaTeam宣布在v727版本(下一个)正式应用新Ui界面",
       "Url": "http://empty.com",
       "Version": "1.0.0",
