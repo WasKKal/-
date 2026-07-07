@@ -2,17 +2,6 @@
   "UIVersion": "1.0.7",
   "modules": [
     {
-      "name": "Delta美化停止维护通知",
-      "Type": "Patch",
-      "Desc": "Delta美化将在下个版本更新后停止运营,因为DeltaTeam宣布在不久版本后正式应用新Ui界面",
-      "Url": "http://empty.com",
-      "Version": "1.0.0",
-      "Author": "蛙QwQ",
-      "Servers": [
-        "All"
-      ]
-    },
-    {
       "name": "Dex",
       "Type": "Script",
       "Desc": "汉化版终极开发者调试工具",
